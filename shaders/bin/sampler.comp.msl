@@ -1,0 +1,22 @@
+#include <metal_stdlib>
+#include <simd/simd.h>
+
+using namespace metal;
+
+struct t_buffer
+{
+    float4 b_buffer;
+};
+
+struct t_uv
+{
+    float2 u_uv;
+};
+
+constant uint3 gl_WorkGroupSize [[maybe_unused]] = uint3(1u);
+
+kernel void main0(constant t_uv& _21 [[buffer(0)]], device t_buffer& _10 [[buffer(1)]], texture2d<float> s_texture [[texture(0)]], sampler s_textureSmplr [[sampler(0)]])
+{
+    _10.b_buffer = s_texture.sample(s_textureSmplr, _21.u_uv, level(0.0));
+}
+

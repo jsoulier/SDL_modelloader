@@ -10,6 +10,9 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_RELEASE ${BINARY_DIR})
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_DEBUG ${BINARY_DIR})
 make_directory(${BINARY_DIR})
 
+# TODO: Remove when we start using glm symbols
+set(BUILD_SHARED_LIBS OFF)
+
 # TODO: Build error
 set(SDLIMAGE_AVIF OFF)
 
@@ -23,6 +26,7 @@ add_subdirectory(lib/sqlite3)
 add_subdirectory(lib/tinyobjloader)
 add_executable(lilcraft WIN32
     src/main.cpp
+    src/render.cpp
 )
 set_target_properties(lilcraft PROPERTIES CXX_STANDARD 23)
 target_link_libraries(lilcraft PUBLIC
@@ -30,10 +34,10 @@ target_link_libraries(lilcraft PUBLIC
     SDL3::SDL3
     SDL3_image::SDL3_image
     SDL3_ttf::SDL3_ttf
-    # glm
-    # nlohmann_json
-    # sqlite3
-    # tinyobjloader
+    glm
+    nlohmann_json
+    sqlite3
+    tinyobjloader
 )
 
 function(add_shader FILE)
@@ -73,6 +77,9 @@ function(add_shader FILE)
     _add_shader(${SHADERCROSS} ${SPV} ${MSL})
     _add_shader(${SHADERCROSS} ${SPV} ${JSON})
 endfunction()
+add_shader(model.frag)
+add_shader(model.vert)
+add_shader(sampler.comp)
 
 file(COPY LICENSE.txt DESTINATION ${BINARY_DIR})
 file(COPY README.md DESTINATION ${BINARY_DIR})
