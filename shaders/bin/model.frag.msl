@@ -1,0 +1,28 @@
+#include <metal_stdlib>
+#include <simd/simd.h>
+
+using namespace metal;
+
+struct main0_out
+{
+    float4 o_color [[color(0)]];
+    float4 o_position [[color(1)]];
+    float4 o_normal [[color(2)]];
+};
+
+struct main0_in
+{
+    float3 i_position [[user(locn0)]];
+    float2 i_uv [[user(locn1), flat]];
+    float3 i_normal [[user(locn2), flat]];
+};
+
+fragment main0_out main0(main0_in in [[stage_in]], texture2d<float> s_palette [[texture(0)]], sampler s_paletteSmplr [[sampler(0)]])
+{
+    main0_out out = {};
+    out.o_color = s_palette.sample(s_paletteSmplr, in.i_uv);
+    out.o_position = float4(in.i_position, 1.0);
+    out.o_normal = float4(in.i_normal, 0.0);
+    return out;
+}
+

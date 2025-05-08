@@ -1,0 +1,103 @@
+#pragma clang diagnostic ignored "-Wmissing-prototypes"
+#pragma clang diagnostic ignored "-Wmissing-braces"
+
+#include <metal_stdlib>
+#include <simd/simd.h>
+
+using namespace metal;
+
+template<typename T, size_t Num>
+struct spvUnsafeArray
+{
+    T elements[Num ? Num : 1];
+    
+    thread T& operator [] (size_t pos) thread
+    {
+        return elements[pos];
+    }
+    constexpr const thread T& operator [] (size_t pos) const thread
+    {
+        return elements[pos];
+    }
+    
+    device T& operator [] (size_t pos) device
+    {
+        return elements[pos];
+    }
+    constexpr const device T& operator [] (size_t pos) const device
+    {
+        return elements[pos];
+    }
+    
+    constexpr const constant T& operator [] (size_t pos) const constant
+    {
+        return elements[pos];
+    }
+    
+    threadgroup T& operator [] (size_t pos) threadgroup
+    {
+        return elements[pos];
+    }
+    constexpr const threadgroup T& operator [] (size_t pos) const threadgroup
+    {
+        return elements[pos];
+    }
+};
+
+struct t_matrix
+{
+    float4x4 u_matrix;
+};
+
+constant spvUnsafeArray<float3, 6> _98 = spvUnsafeArray<float3, 6>({ float3(1.0, 0.0, 0.0), float3(-1.0, 0.0, 0.0), float3(0.0, 1.0, 0.0), float3(0.0, -1.0, 0.0), float3(0.0, 0.0, 1.0), float3(0.0, 0.0, -1.0) });
+
+struct main0_out
+{
+    float3 o_position [[user(locn0)]];
+    float2 o_uv [[user(locn1)]];
+    float3 o_normal [[user(locn2)]];
+    float4 gl_Position [[position]];
+};
+
+struct main0_in
+{
+    uint i_packed [[attribute(0)]];
+    float i_texcoord [[attribute(1)]];
+    float3 i_position [[attribute(2)]];
+    float i_yaw [[attribute(3)]];
+};
+
+static inline __attribute__((always_inline))
+float3 model_get_position(thread const uint& _packed)
+{
+    int sign_x = 1 - (2 * int((_packed >> uint(7)) & 1u));
+    int sign_y = 1 - (2 * int((_packed >> uint(15)) & 1u));
+    int sign_z = 1 - (2 * int((_packed >> uint(23)) & 1u));
+    int x = int((_packed >> uint(0)) & 127u);
+    int y = int((_packed >> uint(8)) & 127u);
+    int z = int((_packed >> uint(16)) & 127u);
+    return float3(float(x * sign_x), float(y * sign_y), float(z * sign_z));
+}
+
+static inline __attribute__((always_inline))
+float3 model_get_normal(thread const uint& _packed)
+{
+    int direction = int((_packed >> uint(24)) & 7u);
+    return _98[direction];
+}
+
+vertex main0_out main0(main0_in in [[stage_in]], constant t_matrix& _174 [[buffer(0)]])
+{
+    main0_out out = {};
+    float cos_yaw = cos(in.i_yaw);
+    float sin_yaw = sin(in.i_yaw);
+    float3x3 rotation = float3x3(float3(float3(cos_yaw, 0.0, sin_yaw)), float3(0.0, 1.0, 0.0), float3(float3(-sin_yaw, 0.0, cos_yaw)));
+    uint param = in.i_packed;
+    out.o_position = in.i_position + (rotation * model_get_position(param));
+    out.o_uv = float2(in.i_texcoord, 0.5);
+    uint param_1 = in.i_packed;
+    out.o_normal = fast::normalize(rotation * model_get_normal(param_1));
+    out.gl_Position = _174.u_matrix * float4(out.o_position, 1.0);
+    return out;
+}
+

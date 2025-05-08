@@ -10,30 +10,38 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_RELEASE ${BINARY_DIR})
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_DEBUG ${BINARY_DIR})
 make_directory(${BINARY_DIR})
 
-# TODO: Build error
+set(BUILD_SHARED_LIBS OFF)
+
+# TODO: build error
 set(SDLIMAGE_AVIF OFF)
 
 add_subdirectory(lib/FastNoiseLite)
 add_subdirectory(lib/SDL)
 add_subdirectory(lib/SDL_image)
 add_subdirectory(lib/SDL_ttf)
+add_subdirectory(lib/entt)
 add_subdirectory(lib/glm)
 add_subdirectory(lib/json)
 add_subdirectory(lib/sqlite3)
 add_subdirectory(lib/tinyobjloader)
 add_executable(lilcraft WIN32
+    src/gpu_loaders.cpp
+    src/gpu_obj_model.cpp
     src/main.cpp
+    src/packed_vertex.cpp
 )
 set_target_properties(lilcraft PROPERTIES CXX_STANDARD 23)
+target_include_directories(lilcraft PUBLIC include)
 target_link_libraries(lilcraft PUBLIC
+    EnTT
     FastNoiseLite
     SDL3::SDL3
     SDL3_image::SDL3_image
     SDL3_ttf::SDL3_ttf
-    # glm
-    # nlohmann_json
-    # sqlite3
-    # tinyobjloader
+    glm
+    nlohmann_json
+    sqlite3
+    tinyobjloader
 )
 
 function(add_shader FILE)
@@ -49,7 +57,7 @@ function(add_shader FILE)
                 OUTPUT ${OUTPUT}
                 COMMAND ${TOOL} ${SOURCE} -o ${OUTPUT}
                 WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-                DEPENDS ${SOURCE}
+                DEPENDS ${SOURCE} shaders/model.glsl
                 BYPRODUCTS ${OUTPUT}
                 COMMENT ${OUTPUT}
             )
@@ -73,6 +81,18 @@ function(add_shader FILE)
     _add_shader(${SHADERCROSS} ${SPV} ${MSL})
     _add_shader(${SHADERCROSS} ${SPV} ${JSON})
 endfunction()
+add_shader(composite.frag)
+add_shader(fullscreen.vert)
+add_shader(model.frag)
+add_shader(model.vert)
+add_shader(sampler.comp)
+
+function(add_model NAME)
+    file(COPY models/${NAME}.mtl DESTINATION ${BINARY_DIR})
+    file(COPY models/${NAME}.obj DESTINATION ${BINARY_DIR})
+    file(COPY models/${NAME}.png DESTINATION ${BINARY_DIR})
+endfunction()
+add_model(grass)
 
 file(COPY LICENSE.txt DESTINATION ${BINARY_DIR})
 file(COPY README.md DESTINATION ${BINARY_DIR})
