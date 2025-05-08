@@ -4,15 +4,3 @@
 [submodule "lib/SDL_ttf"]
 	path = lib/SDL_ttf
 	url = https://github.com/libsdl-org/SDL_ttf
-[submodule "lib/json"]
-	path = lib/json
-	url = https://github.com/nlohmann/json
-[submodule "lib/SDL_image"]
-	path = lib/SDL_image
-	url = https://github.com/libsdl-org/SDL_image
-[submodule "lib/glm"]
-	path = lib/glm
-	url = https://github.com/g-truc/glm
-[submodule "lib/tinyobjloader"]
-	path = lib/tinyobjloader
-	url = https://github.com/tinyobjloader/tinyobjloader

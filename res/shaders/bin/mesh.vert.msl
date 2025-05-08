@@ -1,0 +1,104 @@
+#pragma clang diagnostic ignored "-Wmissing-prototypes"
+#pragma clang diagnostic ignored "-Wmissing-braces"
+
+#include <metal_stdlib>
+#include <simd/simd.h>
+
+using namespace metal;
+
+template<typename T, size_t Num>
+struct spvUnsafeArray
+{
+    T elements[Num ? Num : 1];
+    
+    thread T& operator [] (size_t pos) thread
+    {
+        return elements[pos];
+    }
+    constexpr const thread T& operator [] (size_t pos) const thread
+    {
+        return elements[pos];
+    }
+    
+    device T& operator [] (size_t pos) device
+    {
+        return elements[pos];
+    }
+    constexpr const device T& operator [] (size_t pos) const device
+    {
+        return elements[pos];
+    }
+    
+    constexpr const constant T& operator [] (size_t pos) const constant
+    {
+        return elements[pos];
+    }
+    
+    threadgroup T& operator [] (size_t pos) threadgroup
+    {
+        return elements[pos];
+    }
+    constexpr const threadgroup T& operator [] (size_t pos) const threadgroup
+    {
+        return elements[pos];
+    }
+};
+
+struct t_matrix
+{
+    float4x4 u_matrix;
+};
+
+constant spvUnsafeArray<float3, 6> _88 = spvUnsafeArray<float3, 6>({ float3(1.0, 0.0, 0.0), float3(-1.0, 0.0, 0.0), float3(0.0, 1.0, 0.0), float3(0.0, -1.0, 0.0), float3(0.0, 0.0, 1.0), float3(0.0, 0.0, -1.0) });
+
+struct main0_out
+{
+    float3 o_position [[user(locn0)]];
+    float2 o_uv [[user(locn1)]];
+    float3 o_normal [[user(locn2)]];
+    float4 gl_Position [[position]];
+};
+
+struct main0_in
+{
+    uint i_packed [[attribute(0)]];
+    float i_texcoord [[attribute(1)]];
+    float3 i_position [[attribute(2)]];
+    float i_rotation [[attribute(3)]];
+};
+
+static inline __attribute__((always_inline))
+float3 mesh_get_position(thread const uint& _packed)
+{
+    int3 direction;
+    direction.x = 1 - (2 * int((_packed >> uint(7)) & 1u));
+    direction.y = 1 - (2 * int((_packed >> uint(15)) & 1u));
+    direction.z = 1 - (2 * int((_packed >> uint(23)) & 1u));
+    int3 magnitude;
+    magnitude.x = int((_packed >> uint(0)) & 127u);
+    magnitude.y = int((_packed >> uint(8)) & 127u);
+    magnitude.z = int((_packed >> uint(16)) & 127u);
+    return float3(magnitude * direction);
+}
+
+static inline __attribute__((always_inline))
+float3 mesh_get_normal(thread const uint& _packed)
+{
+    return _88[int((_packed >> uint(24)) & 7u)];
+}
+
+vertex main0_out main0(main0_in in [[stage_in]], constant t_matrix& _169 [[buffer(0)]])
+{
+    main0_out out = {};
+    float cos_rotation = cos(in.i_rotation);
+    float sin_rotation = sin(in.i_rotation);
+    float3x3 rotation = float3x3(float3(float3(cos_rotation, 0.0, sin_rotation)), float3(0.0, 1.0, 0.0), float3(float3(-sin_rotation, 0.0, cos_rotation)));
+    uint param = in.i_packed;
+    out.o_position = in.i_position + (rotation * mesh_get_position(param));
+    out.o_uv = float2(in.i_texcoord, 0.5);
+    uint param_1 = in.i_packed;
+    out.o_normal = fast::normalize(rotation * mesh_get_normal(param_1));
+    out.gl_Position = _169.u_matrix * float4(out.o_position, 1.0);
+    return out;
+}
+
