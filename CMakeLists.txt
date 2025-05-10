@@ -10,19 +10,13 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_RELEASE ${BINARY_DIR})
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_DEBUG ${BINARY_DIR})
 make_directory(${BINARY_DIR})
 
-# TODO: Remove when we start using glm symbols
-set(BUILD_SHARED_LIBS OFF)
-
-# TODO: Build error
-set(SDLIMAGE_AVIF OFF)
-
 add_subdirectory(lib/FastNoiseLite)
 add_subdirectory(lib/SDL)
-add_subdirectory(lib/SDL_image)
 add_subdirectory(lib/SDL_ttf)
 add_subdirectory(lib/glm)
 add_subdirectory(lib/json)
 add_subdirectory(lib/sqlite3)
+add_subdirectory(lib/stb)
 add_subdirectory(lib/tinyobjloader)
 add_executable(lilcraft WIN32
     src/main.cpp
@@ -32,11 +26,11 @@ set_target_properties(lilcraft PROPERTIES CXX_STANDARD 23)
 target_link_libraries(lilcraft PUBLIC
     FastNoiseLite
     SDL3::SDL3
-    SDL3_image::SDL3_image
     SDL3_ttf::SDL3_ttf
     glm
     nlohmann_json
     sqlite3
+    stb
     tinyobjloader
 )
 
@@ -80,6 +74,13 @@ endfunction()
 add_shader(model.frag)
 add_shader(model.vert)
 add_shader(sampler.comp)
+
+function(add_model NAME)
+    file(COPY models/${NAME}.mtl DESTINATION ${BINARY_DIR})
+    file(COPY models/${NAME}.obj DESTINATION ${BINARY_DIR})
+    file(COPY models/${NAME}.png DESTINATION ${BINARY_DIR})
+endfunction()
+add_model(grass)
 
 file(COPY LICENSE.txt DESTINATION ${BINARY_DIR})
 file(COPY README.md DESTINATION ${BINARY_DIR})

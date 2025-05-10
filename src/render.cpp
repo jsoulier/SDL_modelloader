@@ -1,19 +1,20 @@
 #include <SDL3/SDL.h>
-#include <SDL3_image/SDL_image.h>
 #include <SDL3_ttf/SDL_ttf.h>
-
-#define GLM_ENABLE_EXPERIMENTAL
 #include <glm/glm.hpp>
-#include <glm/gtx/hash.hpp>
 #include <nlohmann/json.hpp>
+#include <stb_image.h>
+#include <tiny_obj_loader.h>
 
 #include <array>
 #include <cassert>
+#include <cmath>
 #include <cstddef>
 #include <cstdint>
+#include <cstring>
 #include <exception>
 #include <fstream>
 #include <functional>
+#include <limits>
 #include <memory>
 #include <print>
 #include <string>
@@ -76,24 +77,58 @@ struct transform
 
 struct model_vertex
 {
-    glm::vec3 position;
-    glm::vec2 uv;
-    glm::vec3 normal;
-
-    bool operator==(const model_vertex& other)
+    model_vertex(const glm::vec3& position, const glm::vec2& uv, const glm::vec3& normal)
     {
-        return
-            position == other.position &&
-            uv == other.uv &&
-            normal == other.normal;
+        packed = 0;
+        texcoord = uv.x;
+
+        assert(position.x >= -63.0f && position.x <= 63.0f);
+        assert(position.y >= -63.0f && position.y <= 63.0f);
+        assert(position.z >= -63.0f && position.z <= 63.0f);
+
+        packed |= (std::abs(static_cast<int>(position.x)) & 0x7F) << 0;
+        packed |= (std::signbit(position.x) ? 1 : 0) << 7;
+        packed |= (std::abs(static_cast<int>(position.y)) & 0x7F) << 8;
+        packed |= (std::signbit(position.y) ? 1 : 0) << 15;
+        packed |= (std::abs(static_cast<int>(position.z)) & 0x7F) << 16;
+        packed |= (std::signbit(position.z) ? 1 : 0) << 23;
+
+        uint32_t direction = 0;
+        if (normal.x > 0)
+        {
+            direction = 0;
+        }
+        else if (normal.x < 0)
+        {
+            direction = 1;
+        }
+        else if (normal.y > 0)
+        {
+            direction = 2;
+        }
+        else if (normal.y < 0)
+        {
+            direction = 3;
+        }
+        else if (normal.z > 0)
+        {
+            direction = 4;
+        }
+        else if (normal.z < 0)
+        {
+            direction = 5;
+        }
+        else
+        {
+            assert(false);
+        }
+        packed |= (direction & 0x7) << 24;
     }
-};
 
-struct packed_model_vertex
-{
-    packed_model_vertex(const model_vertex& vertex)
+    bool operator==(const model_vertex& other) const
     {
-        /* TODO: */
+        static constexpr float epsilon = std::numeric_limits<float>::epsilon();
+        return packed == other.packed && std::fabs(texcoord - other.texcoord) < epsilon;
     }
 
     /*
@@ -103,15 +138,13 @@ struct packed_model_vertex
      * 09-15: y (7 bits)
      * 16-16: z sign bit
      * 17-23: z (7 bits)
-     * 24-24: x normal
-     * 25-25: y normal
-     * 26-26: z normal
-     * 27-31: unused (4 bits)
+     * 24-26: direction (3 bits)
+     * 27-31: unused (5 bits)
      */
     uint32_t packed;
 
     /*
-     * x texcoord, y is hardcoded at 0.5
+     * x texcoord (y is hardcoded at 0.5 in the shader)
      */
     float texcoord;
 };
@@ -126,10 +159,9 @@ struct hash<model_vertex>
 {
     size_t operator()(const model_vertex& vertex) const
     {
-        size_t h1 = std::hash<glm::vec3>{}(vertex.position);
-        size_t h2 = std::hash<glm::vec2>{}(vertex.uv);
-        size_t h3 = std::hash<glm::vec3>{}(vertex.normal);
-        return h1 ^ h2 ^ h3;
+        size_t h1 = std::hash<uint32_t>{}(vertex.packed);
+        size_t h2 = std::hash<float>{}(vertex.texcoord);
+        return h1 ^ h2;
     }
 };
 
@@ -172,7 +204,7 @@ SDL_GPUCommandBuffer* forward_command_buffer;
 SDL_GPUTexture* swapchain_texture;
 bool has_frame;
 
-SDL_GPUShader* load_shader(const std::string name)
+SDL_GPUShader* load_shader(const std::string& name)
 {
     std::string shader_path = name + shader_suffix;
     std::string json_path = name + ".json";
@@ -232,7 +264,7 @@ SDL_GPUShader* load_shader(const std::string name)
     return shader;
 }
 
-SDL_GPUComputePipeline* load_compute_pipeline(const std::string name)
+SDL_GPUComputePipeline* load_compute_pipeline(const std::string& name)
 {
     std::string shader_path = name + ".comp" + shader_suffix;
     std::string json_path = name + ".comp" + ".json";
@@ -287,21 +319,6 @@ SDL_GPUComputePipeline* load_compute_pipeline(const std::string name)
     return shader;
 }
 
-SDL_GPUTexture* create_color_texture(uint32_t width, uint32_t height)
-{
-    return nullptr;
-}
-
-SDL_GPUTexture* create_position_texture(uint32_t width, uint32_t height)
-{
-    return nullptr;
-}
-
-SDL_GPUTexture* create_depth_texture(uint32_t width, uint32_t height)
-{
-    return nullptr;
-}
-
 SDL_GPUGraphicsPipeline* create_model_pipeline()
 {
     SDL_GPUColorTargetDescription color_targets[] =
@@ -320,13 +337,13 @@ SDL_GPUGraphicsPipeline* create_model_pipeline()
         .location = 0,
         .buffer_slot = 0,
         .format = SDL_GPU_VERTEXELEMENTFORMAT_UINT,
-        .offset = offsetof(packed_model_vertex, packed),
+        .offset = offsetof(model_vertex, packed),
     },
     {
         .location = 1,
         .buffer_slot = 0,
         .format = SDL_GPU_VERTEXELEMENTFORMAT_FLOAT,
-        .offset = offsetof(packed_model_vertex, texcoord),
+        .offset = offsetof(model_vertex, texcoord),
     },
     {
         .location = 2,
@@ -344,7 +361,7 @@ SDL_GPUGraphicsPipeline* create_model_pipeline()
     SDL_GPUVertexBufferDescription buffers[] =
     {{
         .slot = 0,
-        .pitch = sizeof(packed_model_vertex),
+        .pitch = sizeof(model_vertex),
         .input_rate = SDL_GPU_VERTEXINPUTRATE_VERTEX,
         .instance_step_rate = 0,
     },
@@ -380,6 +397,165 @@ SDL_GPUGraphicsPipeline* create_model_pipeline()
     return SDL_CreateGPUGraphicsPipeline(device, &info);
 }
 
+SDL_GPUTexture* load_texture(const std::string& path)
+{
+    int width;
+    int height;
+    int channels;
+
+    void* src = stbi_load(path.data(), &width, &height, &channels, 4);
+    if (!src)
+    {
+        std::println("Failed to load image: {}, {}", path, stbi_failure_reason());
+        return nullptr;
+    }
+
+    SDL_GPUTextureCreateInfo info{};
+
+    info.usage = SDL_GPU_TEXTUREUSAGE_SAMPLER;
+    info.type = SDL_GPU_TEXTURETYPE_2D;
+    info.format = SDL_GPU_TEXTUREFORMAT_R8G8B8A8_UNORM;
+
+    info.width = width;
+    info.height = height;
+    info.layer_count_or_depth = 1;
+
+    info.num_levels = 1;
+
+    SDL_GPUTexture* texture = SDL_CreateGPUTexture(device, &info);
+    if (!texture)
+    {
+        std::println("Failed to create texture: {}, {}", path, SDL_GetError());
+        stbi_image_free(src);
+        return nullptr;
+    }
+
+    SDL_GPUTransferBufferCreateInfo tbci{};
+    tbci.usage = SDL_GPU_TRANSFERBUFFERUSAGE_UPLOAD;
+    tbci.size = width * height * 4;
+    SDL_GPUTransferBuffer* buffer = SDL_CreateGPUTransferBuffer(device, &tbci);
+    if (!buffer)
+    {
+        std::println("Failed to create transfer buffer: {}, {}", path, SDL_GetError());
+        stbi_image_free(src);
+        SDL_ReleaseGPUTexture(device, texture);
+        return nullptr;
+    }
+
+    void* dst = SDL_MapGPUTransferBuffer(device, buffer, false);
+    if (!dst)
+    {
+        std::println("Failed to map transfer buffer: {}, {}", path, SDL_GetError());
+        stbi_image_free(src);
+        SDL_ReleaseGPUTexture(device, texture);
+        return nullptr;
+    }
+
+    memcpy(dst, src, width * height * 4);
+    stbi_image_free(src);
+    SDL_UnmapGPUTransferBuffer(device, buffer);
+
+    SDL_GPUTextureTransferInfo transfer_info = {0};
+    SDL_GPUTextureRegion region = {0};
+    transfer_info.transfer_buffer = buffer;
+    region.texture = texture;
+    region.w = width;
+    region.h = height;
+    region.d = 1;
+
+    SDL_GPUCommandBuffer* commands = SDL_AcquireGPUCommandBuffer(device);
+    if (!commands)
+    {
+        std::println("Failed to acquire command buffer: {}, {}", path, SDL_GetError());
+        SDL_ReleaseGPUTexture(device, texture);
+        return nullptr;
+    }
+
+    SDL_GPUCopyPass* copy  = SDL_BeginGPUCopyPass(commands);
+    if (!copy)
+    {
+        std::println("Failed to begin copy pass: {}, {}", path, SDL_GetError());
+        SDL_ReleaseGPUTexture(device, texture);
+        SDL_CancelGPUCommandBuffer(commands);
+        return nullptr;
+    }
+
+    SDL_UploadToGPUTexture(copy, &transfer_info, &region, true);
+    SDL_EndGPUCopyPass(copy);
+    SDL_SubmitGPUCommandBuffer(commands);
+    SDL_ReleaseGPUTransferBuffer(device, buffer);
+
+    return texture;
+}
+
+SDL_GPUTexture* create_color_texture(uint32_t width, uint32_t height, SDL_GPUTextureUsageFlags usage = 0)
+{
+    SDL_GPUTextureCreateInfo info{};
+
+    info.format = color_texture_format;
+    info.usage = SDL_GPU_TEXTUREUSAGE_COLOR_TARGET | usage;
+    info.type = SDL_GPU_TEXTURETYPE_2D;
+
+    info.width = width;
+    info.height = height;
+    info.layer_count_or_depth = 1;
+
+    info.num_levels = 1;
+
+    return SDL_CreateGPUTexture(device, &info);
+}
+
+SDL_GPUTexture* create_position_texture(uint32_t width, uint32_t height, SDL_GPUTextureUsageFlags usage = 0)
+{
+    SDL_GPUTextureCreateInfo info{};
+
+    info.format = SDL_GPU_TEXTUREFORMAT_R32G32B32A32_FLOAT;
+    info.usage = SDL_GPU_TEXTUREUSAGE_COLOR_TARGET | usage;
+    info.type = SDL_GPU_TEXTURETYPE_2D;
+
+    info.width = width;
+    info.height = height;
+    info.layer_count_or_depth = 1;
+
+    info.num_levels = 1;
+
+    return SDL_CreateGPUTexture(device, &info);
+}
+
+SDL_GPUTexture* create_normal_texture(uint32_t width, uint32_t height, SDL_GPUTextureUsageFlags usage = 0)
+{
+    SDL_GPUTextureCreateInfo info{};
+
+    info.format = SDL_GPU_TEXTUREFORMAT_R8G8B8A8_SNORM;
+    info.usage = SDL_GPU_TEXTUREUSAGE_COLOR_TARGET | usage;
+    info.type = SDL_GPU_TEXTURETYPE_2D;
+
+    info.width = width;
+    info.height = height;
+    info.layer_count_or_depth = 1;
+
+    info.num_levels = 1;
+
+    return SDL_CreateGPUTexture(device, &info);
+}
+
+SDL_GPUTexture* create_depth_texture(uint32_t width, uint32_t height, SDL_GPUTextureUsageFlags usage = 0)
+{
+    SDL_GPUTextureCreateInfo info{};
+
+    info.format = depth_texture_format;
+    info.usage = SDL_GPU_TEXTUREUSAGE_DEPTH_STENCIL_TARGET | usage;
+    info.type = SDL_GPU_TEXTURETYPE_2D;
+
+    info.width = width;
+    info.height = height;
+    info.layer_count_or_depth = 1;
+
+    info.num_levels = 1;
+
+    return SDL_CreateGPUTexture(device, &info);
+}
+
 } /* namespace */
 
 namespace render
@@ -394,8 +570,14 @@ bool init()
         return false;
     }
 
+#ifndef NDEBUG
+    bool debug = true;
+#else
+    bool debug = false;
+#endif
+
     shader_format = SDL_GPU_SHADERFORMAT_SPIRV | SDL_GPU_SHADERFORMAT_DXIL | SDL_GPU_SHADERFORMAT_MSL;
-    device = SDL_CreateGPUDevice(shader_format, true, nullptr);
+    device = SDL_CreateGPUDevice(shader_format, debug, nullptr);
     if (!device)
     {
         std::println("Failed to create device: {}", SDL_GetError());
@@ -436,6 +618,26 @@ bool init()
     depth_texture_format = SDL_GPU_TEXTUREFORMAT_D32_FLOAT;
 
     /* TODO: parallelize */
+
+    textures[texture_color] = create_color_texture(render_width, render_height,
+        SDL_GPU_TEXTUREUSAGE_GRAPHICS_STORAGE_READ);
+
+    textures[texture_position] = create_color_texture(render_width, render_height,
+        SDL_GPU_TEXTUREUSAGE_GRAPHICS_STORAGE_READ | SDL_GPU_TEXTUREUSAGE_COMPUTE_STORAGE_READ);
+
+    textures[texture_normal] = create_color_texture(render_width, render_height,
+        SDL_GPU_TEXTUREUSAGE_GRAPHICS_STORAGE_READ);
+
+    textures[texture_depth] = create_depth_texture(render_width, render_height);
+
+    for (int i = 0; i < texture_count; i++)
+    {
+        if (!textures[i])
+        {
+            std::println("Failed to create texture(s)");
+            return false;
+        }
+    }
 
 #define X(name) \
     std::string shader_##name##_str = #name; \
@@ -515,9 +717,177 @@ void quit()
     TTF_Quit();
 }
 
-std::shared_ptr<model> get_model(const std::string& string)
+std::shared_ptr<model> get_model(const std::string& name)
 {
-    return nullptr;
+    /* TODO: lazy load */
+    /* TODO: fix leaks on error */
+
+    auto it = models.find(name);
+    if (it != models.end())
+    {
+        return it->second;
+    }
+
+    std::string obj_path = name + ".obj";
+    std::string png_path = name + ".png";
+
+    tinyobj::ObjReader reader;
+    if (!reader.ParseFromFile(obj_path))
+    {
+        std::println("Failed to get model: {}, {}", name, reader.Error());
+        return nullptr;
+    }
+
+    tinyobj::attrib_t attrib = reader.GetAttrib();
+    std::vector<tinyobj::shape_t> shapes = reader.GetShapes();
+    std::vector<uint32_t> indices;
+    std::vector<model_vertex> vertices;
+    std::unordered_map<model_vertex, uint32_t> unique_vertices;
+
+    for (const auto& shape : shapes)
+    {
+        for (const auto& index : shape.mesh.indices)
+        {
+            glm::vec3 position;
+            glm::vec2 uv;
+            glm::vec3 normal;
+
+            position.x = attrib.vertices[3 * index.vertex_index + 0];
+            position.y = attrib.vertices[3 * index.vertex_index + 1];
+            position.z = attrib.vertices[3 * index.vertex_index + 2];
+
+            uv.x = attrib.texcoords[3 * index.texcoord_index + 0];
+            uv.y = attrib.texcoords[2 * index.texcoord_index + 1];
+
+            normal.x = attrib.normals[3 * index.normal_index + 0];
+            normal.y = attrib.normals[3 * index.normal_index + 1];
+            normal.z = attrib.normals[3 * index.normal_index + 2];
+
+            model_vertex vertex{position, uv, normal};
+
+            auto it = unique_vertices.find(vertex);
+            if (it == unique_vertices.end())
+            {
+                uint32_t size = static_cast<uint32_t>(vertices.size());
+                it = unique_vertices.emplace(vertex, size).first;
+                vertices.emplace_back(vertex);
+            }
+            indices.push_back(it->second);
+        }
+    }
+
+    std::shared_ptr<model> m = std::make_shared<model>();
+    if (!m)
+    {
+        std::println("Failed to allocate model");
+        return nullptr;
+    }
+
+    models.emplace(name, m);
+
+    m->palette = load_texture(png_path);
+    if (!m->palette)
+    {
+        std::println("Failed to load palette");
+        return m;
+    }
+
+    SDL_GPUCommandBuffer* command_buffer;
+    SDL_GPUCopyPass* copy_pass;
+    SDL_GPUTransferBuffer* vertex_transfer_buffer;
+    SDL_GPUTransferBuffer* index_transfer_buffer;
+
+    command_buffer = SDL_AcquireGPUCommandBuffer(device);
+    if (!command_buffer)
+    {
+        std::println("Failed to acquire command buffer: {}", SDL_GetError());
+        return m;
+    }
+
+    copy_pass = SDL_BeginGPUCopyPass(command_buffer);
+    if (!copy_pass)
+    {
+        std::println("Failed to begin copy pass: {}", SDL_GetError());
+        SDL_CancelGPUCommandBuffer(command_buffer);
+        return m;
+    }
+
+    {
+        SDL_GPUBufferCreateInfo info{};
+
+        info.usage = SDL_GPU_BUFFERUSAGE_VERTEX;
+        info.size = vertices.size() * sizeof(model_vertex);
+        m->vertex_buffer = SDL_CreateGPUBuffer(device, &info);
+
+        info.usage = SDL_GPU_BUFFERUSAGE_INDEX;
+        info.size = indices.size() * sizeof(uint32_t);
+        m->index_buffer = SDL_CreateGPUBuffer(device, &info);
+
+        if (!m->vertex_buffer || !m->index_buffer)
+        {
+            std::println("Failed to create buffer(s): {}", SDL_GetError());
+            return m;
+        }
+    }
+
+    {
+        SDL_GPUTransferBufferCreateInfo info{};
+
+        info.usage = SDL_GPU_TRANSFERBUFFERUSAGE_UPLOAD;
+        info.size = vertices.size() * sizeof(model_vertex);
+        vertex_transfer_buffer = SDL_CreateGPUTransferBuffer(device, &info);
+
+        info.usage = SDL_GPU_TRANSFERBUFFERUSAGE_UPLOAD;
+        info.size = indices.size() * sizeof(uint32_t);
+        index_transfer_buffer = SDL_CreateGPUTransferBuffer(device, &info);
+
+        if (!vertex_transfer_buffer || !index_transfer_buffer)
+        {
+            std::println("Failed to create transfer buffer(s): {}", SDL_GetError());
+            return m;
+        }
+    }
+
+    void* vertex_data = SDL_MapGPUTransferBuffer(device, vertex_transfer_buffer, false);
+    void* index_data = SDL_MapGPUTransferBuffer(device, index_transfer_buffer, false);
+    if (!vertex_data || !index_data)
+    {
+        std::println("Failed to map buffer(s): {}", SDL_GetError());
+        return m;
+    }
+
+    std::memcpy(vertex_data, vertices.data(), vertices.size() * sizeof(model_vertex));
+    std::memcpy(index_data, indices.data(), indices.size() * sizeof(uint32_t));
+
+    SDL_UnmapGPUTransferBuffer(device, vertex_transfer_buffer);
+    SDL_UnmapGPUTransferBuffer(device, index_transfer_buffer);
+
+    SDL_GPUBufferRegion region{};
+    SDL_GPUTransferBufferLocation location{};
+
+    region.buffer = m->vertex_buffer;
+    region.size = vertices.size() * sizeof(model_vertex);
+    location.transfer_buffer = vertex_transfer_buffer;
+    SDL_UploadToGPUBuffer(copy_pass, &location, &region, false);
+
+    region.buffer = m->index_buffer;
+    region.size = indices.size() * sizeof(uint32_t);
+    location.transfer_buffer = index_transfer_buffer;
+    SDL_UploadToGPUBuffer(copy_pass, &location, &region, false);
+
+    SDL_EndGPUCopyPass(copy_pass);
+    SDL_SubmitGPUCommandBuffer(command_buffer);
+
+    m->loaded = true;
+    return m;
+}
+
+void draw(std::shared_ptr<model>& m, const glm::vec3& position, float yaw)
+{
+    if (!has_frame)
+    {
+        return;
+    }
 }
 
 void begin_frame()
@@ -550,14 +920,6 @@ void begin_frame()
     }
 
     has_frame = true;
-}
-
-void draw(std::shared_ptr<model>& instance, const glm::vec3& position, float yaw)
-{
-    if (!has_frame)
-    {
-        return;
-    }
 }
 
 void end_deferred_frame()
