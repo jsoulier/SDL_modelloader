@@ -3,7 +3,6 @@
 #include <tiny_obj_loader.h>
 
 #include <cassert>
-#include <cstddef>
 #include <cstdint>
 #include <cstring>
 #include <limits>
@@ -12,18 +11,17 @@
 #include <unordered_map>
 #include <vector>
 
-#include "gpu_loaders.hpp"
-#include "gpu_obj_model.hpp"
-#include "packed_vertex.hpp"
+#include "loaders.hpp"
+#include "model.hpp"
+#include "voxel.hpp"
 
-bool gpu_obj_model::load(SDL_GPUDevice* device, SDL_GPUCopyPass* copy_pass, const char* name)
+bool Model::load(SDL_GPUDevice* device, SDL_GPUCopyPass* copy_pass, const std::string& name)
 {
-    /* TODO: refactor */
+    /* TODO: refactor (too many copies) */
     /* TODO: fix leaks on failure */
 
-    std::string path = name;
-    std::string obj_path = path + ".obj";
-    std::string png_path = path + ".png";
+    std::string obj_path = name + ".obj";
+    std::string png_path = name + ".png";
 
     tinyobj::ObjReader reader;
     if (!reader.ParseFromFile(obj_path))
@@ -35,37 +33,37 @@ bool gpu_obj_model::load(SDL_GPUDevice* device, SDL_GPUCopyPass* copy_pass, cons
     tinyobj::attrib_t attrib = reader.GetAttrib();
     std::vector<tinyobj::shape_t> shapes = reader.GetShapes();
     std::vector<uint16_t> indices;
-    std::vector<packed_vertex> vertices;
-    std::unordered_map<packed_vertex, uint32_t> unique_vertices;
+    std::vector<Voxel> vertices;
+    std::unordered_map<Voxel, uint32_t> unique_vertices;
 
     for (const auto& shape : shapes)
     {
         for (const auto& index : shape.mesh.indices)
         {
-            static constexpr int int_scale = 10;
+            static constexpr int scale = 10;
 
-            int vx = attrib.vertices[3 * index.vertex_index + 0] * int_scale;
-            int vy = attrib.vertices[3 * index.vertex_index + 1] * int_scale;
-            int vz = attrib.vertices[3 * index.vertex_index + 2] * int_scale;
+            int vx = attrib.vertices[3 * index.vertex_index + 0] * scale;
+            int vy = attrib.vertices[3 * index.vertex_index + 1] * scale;
+            int vz = attrib.vertices[3 * index.vertex_index + 2] * scale;
             int tx = attrib.texcoords[2 * index.texcoord_index + 0];
             int nx = attrib.normals[3 * index.normal_index + 0];
             int ny = attrib.normals[3 * index.normal_index + 1];
             int nz = attrib.normals[3 * index.normal_index + 2];
 
-            packed_vertex vertex{nx, vy, vz, tx, nx, ny, nz};
+            Voxel voxel{nx, vy, vz, tx, nx, ny, nz};
 
-            auto it = unique_vertices.find(vertex);
+            auto it = unique_vertices.find(voxel);
             if (it == unique_vertices.end())
             {
                 uint32_t size = static_cast<uint32_t>(vertices.size());
-                it = unique_vertices.emplace(vertex, size).first;
-                vertices.emplace_back(vertex);
+                it = unique_vertices.emplace(voxel, size).first;
+                vertices.emplace_back(voxel);
             }
             indices.push_back(it->second);
         }
     }
 
-    palette = load_gpu_texture(device, copy_pass, png_path.data());
+    palette = load_texture(device, copy_pass, png_path);
     if (!palette)
     {
         std::println("Failed to load palette: {}", png_path);
@@ -79,7 +77,7 @@ bool gpu_obj_model::load(SDL_GPUDevice* device, SDL_GPUCopyPass* copy_pass, cons
         SDL_GPUTransferBufferCreateInfo info{};
 
         info.usage = SDL_GPU_TRANSFERBUFFERUSAGE_UPLOAD;
-        info.size = vertices.size() * sizeof(packed_vertex);
+        info.size = vertices.size() * sizeof(Voxel);
         vertex_transfer_buffer = SDL_CreateGPUTransferBuffer(device, &info);
 
         info.usage = SDL_GPU_TRANSFERBUFFERUSAGE_UPLOAD;
@@ -97,7 +95,7 @@ bool gpu_obj_model::load(SDL_GPUDevice* device, SDL_GPUCopyPass* copy_pass, cons
         SDL_GPUBufferCreateInfo info{};
 
         info.usage = SDL_GPU_BUFFERUSAGE_VERTEX;
-        info.size = vertices.size() * sizeof(packed_vertex);
+        info.size = vertices.size() * sizeof(Voxel);
         vertex_buffer = SDL_CreateGPUBuffer(device, &info);
 
         info.usage = SDL_GPU_BUFFERUSAGE_INDEX;
@@ -119,7 +117,7 @@ bool gpu_obj_model::load(SDL_GPUDevice* device, SDL_GPUCopyPass* copy_pass, cons
         return false;
     }
 
-    std::memcpy(vertex_data, vertices.data(), vertices.size() * sizeof(packed_vertex));
+    std::memcpy(vertex_data, vertices.data(), vertices.size() * sizeof(Voxel));
     std::memcpy(index_data, indices.data(), indices.size() * sizeof(uint16_t));
 
     SDL_UnmapGPUTransferBuffer(device, vertex_transfer_buffer);
@@ -129,7 +127,7 @@ bool gpu_obj_model::load(SDL_GPUDevice* device, SDL_GPUCopyPass* copy_pass, cons
     SDL_GPUTransferBufferLocation location{};
 
     region.buffer = vertex_buffer;
-    region.size = vertices.size() * sizeof(packed_vertex);
+    region.size = vertices.size() * sizeof(Voxel);
     location.transfer_buffer = vertex_transfer_buffer;
     SDL_UploadToGPUBuffer(copy_pass, &location, &region, false);
 
@@ -147,8 +145,14 @@ bool gpu_obj_model::load(SDL_GPUDevice* device, SDL_GPUCopyPass* copy_pass, cons
     return true;
 }
 
-void gpu_obj_model::free(SDL_GPUDevice* device)
+void Model::free(SDL_GPUDevice* device)
 {
+    if (palette)
+    {
+        SDL_ReleaseGPUTexture(device, palette);
+        palette = nullptr;
+    }
+
     if (vertex_buffer)
     {
         SDL_ReleaseGPUBuffer(device, vertex_buffer);
@@ -160,30 +164,24 @@ void gpu_obj_model::free(SDL_GPUDevice* device)
         SDL_ReleaseGPUBuffer(device, index_buffer);
         index_buffer = nullptr;
     }
-
-    if (palette)
-    {
-        SDL_ReleaseGPUTexture(device, palette);
-        palette = nullptr;
-    }
 }
 
-SDL_GPUBuffer* gpu_obj_model::get_vertex_buffer()
-{
-    return vertex_buffer;
-}
-
-SDL_GPUBuffer* gpu_obj_model::get_index_buffer()
-{
-    return index_buffer;
-}
-
-SDL_GPUTexture* gpu_obj_model::get_palette()
+SDL_GPUTexture* Model::get_palette()
 {
     return palette;
 }
 
-int gpu_obj_model::get_num_indices() const
+SDL_GPUBuffer* Model::get_vertex_buffer()
+{
+    return vertex_buffer;
+}
+
+SDL_GPUBuffer* Model::get_index_buffer()
+{
+    return index_buffer;
+}
+
+int Model::get_num_indices() const
 {
     return num_indices;
 }

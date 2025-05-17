@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.24)
 project(lilcraft VERSION 0.0.1)
 
+set(BUILD_SHARED_LIBS OFF)
+
 set(BINARY_DIR ${CMAKE_BINARY_DIR}/bin)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${BINARY_DIR})
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${BINARY_DIR})
@@ -10,39 +12,55 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_RELEASE ${BINARY_DIR})
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_DEBUG ${BINARY_DIR})
 make_directory(${BINARY_DIR})
 
-set(BUILD_SHARED_LIBS OFF)
-
-# TODO: build error
 set(SDLIMAGE_AVIF OFF)
+set(SDLIMAGE_BMP OFF)
+set(SDLIMAGE_GIF OFF)
+set(SDLIMAGE_JPG OFF)
+set(SDLIMAGE_JXL OFF)
+set(SDLIMAGE_LBM OFF)
+set(SDLIMAGE_PCX OFF)
+set(SDLIMAGE_PNM OFF)
+set(SDLIMAGE_QOI OFF)
+set(SDLIMAGE_SVG OFF)
+set(SDLIMAGE_TGA OFF)
+set(SDLIMAGE_TIF OFF)
+set(SDLIMAGE_WEBP OFF)
+set(SDLIMAGE_XCF OFF)
+set(SDLIMAGE_XPM OFF)
+set(SDLIMAGE_XV OFF)
+set(SDLTTF_PLUTOSVG OFF)
 
 add_subdirectory(lib/FastNoiseLite)
 add_subdirectory(lib/SDL)
 add_subdirectory(lib/SDL_image)
 add_subdirectory(lib/SDL_ttf)
-add_subdirectory(lib/entt)
 add_subdirectory(lib/glm)
 add_subdirectory(lib/json)
 add_subdirectory(lib/sqlite3)
 add_subdirectory(lib/tinyobjloader)
 add_executable(lilcraft WIN32
-    src/gpu_loaders.cpp
-    src/gpu_obj_model.cpp
+    src/camera.cpp
+    src/database.cpp
+    src/entity.cpp
+    src/item.cpp
+    src/loaders.cpp
     src/main.cpp
-    src/packed_vertex.cpp
+    src/model.cpp
+    src/renderer.cpp
+    src/tile.cpp
+    src/voxel.cpp
+    src/world.cpp
 )
 set_target_properties(lilcraft PROPERTIES CXX_STANDARD 23)
 target_include_directories(lilcraft PUBLIC include)
-target_link_libraries(lilcraft PUBLIC
-    EnTT
-    FastNoiseLite
-    SDL3::SDL3
-    SDL3_image::SDL3_image
-    SDL3_ttf::SDL3_ttf
-    glm
-    nlohmann_json
-    sqlite3
-    tinyobjloader
-)
+target_link_libraries(lilcraft PUBLIC FastNoiseLite)
+target_link_libraries(lilcraft PUBLIC SDL3::SDL3)
+target_link_libraries(lilcraft PUBLIC SDL3_image::SDL3_image)
+target_link_libraries(lilcraft PUBLIC SDL3_ttf::SDL3_ttf)
+target_link_libraries(lilcraft PUBLIC glm)
+target_link_libraries(lilcraft PUBLIC nlohmann_json)
+target_link_libraries(lilcraft PUBLIC sqlite3)
+target_link_libraries(lilcraft PUBLIC tinyobjloader)
 
 function(add_shader FILE)
     set(SHADERCROSS lib/SDL_shadercross/shadercross.exe)
@@ -57,7 +75,7 @@ function(add_shader FILE)
                 OUTPUT ${OUTPUT}
                 COMMAND ${TOOL} ${SOURCE} -o ${OUTPUT}
                 WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-                DEPENDS ${SOURCE} shaders/model.glsl
+                DEPENDS ${SOURCE} shaders/voxel.glsl
                 BYPRODUCTS ${OUTPUT}
                 COMMENT ${OUTPUT}
             )
@@ -81,11 +99,8 @@ function(add_shader FILE)
     _add_shader(${SHADERCROSS} ${SPV} ${MSL})
     _add_shader(${SHADERCROSS} ${SPV} ${JSON})
 endfunction()
-add_shader(composite.frag)
-add_shader(fullscreen.vert)
 add_shader(model.frag)
 add_shader(model.vert)
-add_shader(sampler.comp)
 
 function(add_model NAME)
     file(COPY models/${NAME}.mtl DESTINATION ${BINARY_DIR})

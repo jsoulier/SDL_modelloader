@@ -68,7 +68,7 @@ struct main0_in
 };
 
 static inline __attribute__((always_inline))
-float3 model_get_position(thread const uint& _packed)
+float3 voxel_get_position(thread const uint& _packed)
 {
     int sign_x = 1 - (2 * int((_packed >> uint(7)) & 1u));
     int sign_y = 1 - (2 * int((_packed >> uint(15)) & 1u));
@@ -80,7 +80,7 @@ float3 model_get_position(thread const uint& _packed)
 }
 
 static inline __attribute__((always_inline))
-float3 model_get_normal(thread const uint& _packed)
+float3 voxel_get_normal(thread const uint& _packed)
 {
     int direction = int((_packed >> uint(24)) & 7u);
     return _98[direction];
@@ -93,10 +93,10 @@ vertex main0_out main0(main0_in in [[stage_in]], constant t_matrix& _174 [[buffe
     float sin_yaw = sin(in.i_yaw);
     float3x3 rotation = float3x3(float3(float3(cos_yaw, 0.0, sin_yaw)), float3(0.0, 1.0, 0.0), float3(float3(-sin_yaw, 0.0, cos_yaw)));
     uint param = in.i_packed;
-    out.o_position = in.i_position + (rotation * model_get_position(param));
+    out.o_position = in.i_position + (rotation * voxel_get_position(param));
     out.o_uv = float2(in.i_texcoord, 0.5);
     uint param_1 = in.i_packed;
-    out.o_normal = fast::normalize(rotation * model_get_normal(param_1));
+    out.o_normal = fast::normalize(rotation * voxel_get_normal(param_1));
     out.gl_Position = _174.u_matrix * float4(out.o_position, 1.0);
     return out;
 }

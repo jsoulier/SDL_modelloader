@@ -7,10 +7,10 @@
 #include <print>
 
 template<typename T>
-class dynamic_gpu_buffer
+class Buffer
 {
 public:
-    dynamic_gpu_buffer()
+    Buffer()
         : transfer_buffer{nullptr}
         , buffer_usage{SDL_GPU_BUFFERUSAGE_VERTEX}
         , buffer{nullptr}
@@ -78,7 +78,7 @@ public:
             if (!new_data)
             {
                 std::println("Failed to map transfer buffer: {}", SDL_GetError());
-                SDL_ReleaseGPUTransferBUffer(device, new_transfer_buffer);
+                SDL_ReleaseGPUTransferBuffer(device, new_transfer_buffer);
                 return;
             }
 

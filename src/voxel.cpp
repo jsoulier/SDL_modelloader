@@ -1,11 +1,10 @@
 #include <cassert>
 #include <cmath>
 #include <cstdint>
-#include <limits>
 
-#include "packed_vertex.hpp"
+#include "voxel.hpp"
 
-packed_vertex::packed_vertex(int vx, int vy, int vz, int tx, int nx, int ny, int nz)
+Voxel::Voxel(int vx, int vy, int vz, int tx, int nx, int ny, int nz)
 {
     packed = 0;
     texcoord = tx;
@@ -53,8 +52,7 @@ packed_vertex::packed_vertex(int vx, int vy, int vz, int tx, int nx, int ny, int
     packed |= (direction & 0x7) << 24;
 }
 
-bool packed_vertex::operator==(const packed_vertex other) const
+bool Voxel::operator==(const Voxel other) const
 {
-    static constexpr float e = std::numeric_limits<float>::epsilon();
-    return packed == other.packed && std::abs(texcoord - other.texcoord) < e;
+    return packed == other.packed && texcoord == other.texcoord;
 }

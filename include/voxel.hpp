@@ -4,10 +4,10 @@
 #include <cstdint>
 #include <functional>
 
-struct packed_vertex
+struct Voxel
 {
-    packed_vertex(int vx, int vy, int vz, int tx, int nx, int ny, int nz);
-    bool operator==(const packed_vertex other) const;
+    Voxel(int vx, int vy, int vz, int tx, int nx, int ny, int nz);
+    bool operator==(const Voxel other) const;
 
     /*
      * 00-00: x sign bit
@@ -18,7 +18,7 @@ struct packed_vertex
      * 17-23: z (7 bits)
      * 24-26: direction (3 bits)
      * 27-31: unused (5 bits)
-     * 32-61: texcoord (32 bits)
+     * 32-63: texcoord (32 bits)
      */
     uint32_t packed;
     float texcoord;
@@ -27,12 +27,12 @@ struct packed_vertex
 namespace std
 {
     template<>
-    struct hash<packed_vertex>
+    struct hash<Voxel>
     {
-        size_t operator()(const packed_vertex& vertex) const
+        size_t operator()(const Voxel& voxel) const
         {
-            size_t h1 = std::hash<uint32_t>{}(vertex.packed);
-            size_t h2 = std::hash<float>{}(vertex.texcoord);
+            size_t h1 = std::hash<uint32_t>{}(voxel.packed);
+            size_t h2 = std::hash<float>{}(voxel.texcoord);
             return h1 ^ h2;
         }
     };

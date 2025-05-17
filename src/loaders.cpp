@@ -9,7 +9,7 @@
 #include <print>
 #include <string>
 
-#include "gpu_loaders.hpp"
+#include "loaders.hpp"
 
 static SDL_GPUShaderFormat get_shader_format(SDL_GPUDevice* device)
 {
@@ -74,11 +74,10 @@ static const char* get_shader_string(SDL_GPUDevice* device)
     return "";
 }
 
-SDL_GPUShader* load_gpu_shader(SDL_GPUDevice* device, const char* name)
+SDL_GPUShader* load_shader(SDL_GPUDevice* device, const std::string& name)
 {
-    std::string path = name;
-    std::string shader_path = path + get_shader_string(device);
-    std::string json_path = path + ".json";
+    std::string shader_path = name + get_shader_string(device);
+    std::string json_path = name + ".json";
 
     SDL_GPUShaderCreateInfo info{};
 
@@ -115,11 +114,11 @@ SDL_GPUShader* load_gpu_shader(SDL_GPUDevice* device, const char* name)
     info.num_storage_buffers = json["storage_buffers"];
     info.num_storage_textures = json["storage_textures"];
 
-    if (path.contains(".vert"))
+    if (name.contains(".vert"))
     {
         info.stage = SDL_GPU_SHADERSTAGE_VERTEX;
     }
-    else if (path.contains(".frag"))
+    else if (name.contains(".frag"))
     {
         info.stage = SDL_GPU_SHADERSTAGE_FRAGMENT;
     }
@@ -142,11 +141,10 @@ SDL_GPUShader* load_gpu_shader(SDL_GPUDevice* device, const char* name)
     return shader;
 }
 
-SDL_GPUComputePipeline* load_gpu_compute_pipeline(SDL_GPUDevice* device, const char* name)
+SDL_GPUComputePipeline* load_compute_pipeline(SDL_GPUDevice* device, const std::string& name)
 {
-    std::string path = name;
-    std::string shader_path = path + get_shader_string(device);
-    std::string json_path = path + ".json";
+    std::string shader_path = name + get_shader_string(device);
+    std::string json_path = name + ".json";
 
     SDL_GPUComputePipelineCreateInfo info{};
 
@@ -192,20 +190,20 @@ SDL_GPUComputePipeline* load_gpu_compute_pipeline(SDL_GPUDevice* device, const c
     info.format = get_shader_format(device);
     info.entrypoint = get_shader_entrypoint(device);
 
-    SDL_GPUComputePipeline* shader = SDL_CreateGPUComputePipeline(device, &info);
+    SDL_GPUComputePipeline* compute_pipeline = SDL_CreateGPUComputePipeline(device, &info);
     SDL_free(code);
-    if (!shader)
+    if (!compute_pipeline)
     {
         std::println("Failed to create compute pipeline: {}, {}", shader_path, SDL_GetError());
         return nullptr;
     }
 
-    return shader;
+    return compute_pipeline;
 }
 
-SDL_GPUTexture* load_gpu_texture(SDL_GPUDevice* device, SDL_GPUCopyPass* copy_pass, const char* path)
+SDL_GPUTexture* load_texture(SDL_GPUDevice* device, SDL_GPUCopyPass* copy_pass, const std::string& path)
 {
-    SDL_Surface* surface = IMG_Load(path);
+    SDL_Surface* surface = IMG_Load(path.data());
     if (!surface)
     {
         std::println("Failed to load surface: {}, {}", path, SDL_GetError());
