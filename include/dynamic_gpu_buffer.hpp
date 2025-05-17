@@ -78,7 +78,7 @@ public:
             if (!new_data)
             {
                 std::println("Failed to map transfer buffer: {}", SDL_GetError());
-                SDL_ReleaseGPUTransferBUffer(device, new_transfer_buffer);
+                SDL_ReleaseGPUTransferBuffer(device, new_transfer_buffer);
                 return;
             }
 

@@ -21,12 +21,15 @@ add_subdirectory(lib/SDL_image)
 add_subdirectory(lib/SDL_ttf)
 add_subdirectory(lib/entt)
 add_subdirectory(lib/glm)
+add_subdirectory(lib/imgui)
 add_subdirectory(lib/json)
 add_subdirectory(lib/sqlite3)
 add_subdirectory(lib/tinyobjloader)
 add_executable(lilcraft WIN32
+    src/components.cpp
     src/gpu_loaders.cpp
     src/gpu_obj_model.cpp
+    src/graphics.cpp
     src/main.cpp
     src/packed_vertex.cpp
 )
@@ -39,6 +42,7 @@ target_link_libraries(lilcraft PUBLIC
     SDL3_image::SDL3_image
     SDL3_ttf::SDL3_ttf
     glm
+    imgui
     nlohmann_json
     sqlite3
     tinyobjloader

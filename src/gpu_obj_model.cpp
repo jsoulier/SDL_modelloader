@@ -42,11 +42,11 @@ bool gpu_obj_model::load(SDL_GPUDevice* device, SDL_GPUCopyPass* copy_pass, cons
     {
         for (const auto& index : shape.mesh.indices)
         {
-            static constexpr int int_scale = 10;
+            static constexpr int whole_num_scale = 10;
 
-            int vx = attrib.vertices[3 * index.vertex_index + 0] * int_scale;
-            int vy = attrib.vertices[3 * index.vertex_index + 1] * int_scale;
-            int vz = attrib.vertices[3 * index.vertex_index + 2] * int_scale;
+            int vx = attrib.vertices[3 * index.vertex_index + 0] * whole_num_scale;
+            int vy = attrib.vertices[3 * index.vertex_index + 1] * whole_num_scale;
+            int vz = attrib.vertices[3 * index.vertex_index + 2] * whole_num_scale;
             int tx = attrib.texcoords[2 * index.texcoord_index + 0];
             int nx = attrib.normals[3 * index.normal_index + 0];
             int ny = attrib.normals[3 * index.normal_index + 1];
@@ -149,6 +149,12 @@ bool gpu_obj_model::load(SDL_GPUDevice* device, SDL_GPUCopyPass* copy_pass, cons
 
 void gpu_obj_model::free(SDL_GPUDevice* device)
 {
+    if (palette)
+    {
+        SDL_ReleaseGPUTexture(device, palette);
+        palette = nullptr;
+    }
+
     if (vertex_buffer)
     {
         SDL_ReleaseGPUBuffer(device, vertex_buffer);
@@ -160,12 +166,11 @@ void gpu_obj_model::free(SDL_GPUDevice* device)
         SDL_ReleaseGPUBuffer(device, index_buffer);
         index_buffer = nullptr;
     }
+}
 
-    if (palette)
-    {
-        SDL_ReleaseGPUTexture(device, palette);
-        palette = nullptr;
-    }
+SDL_GPUTexture* gpu_obj_model::get_palette()
+{
+    return palette;
 }
 
 SDL_GPUBuffer* gpu_obj_model::get_vertex_buffer()
@@ -176,11 +181,6 @@ SDL_GPUBuffer* gpu_obj_model::get_vertex_buffer()
 SDL_GPUBuffer* gpu_obj_model::get_index_buffer()
 {
     return index_buffer;
-}
-
-SDL_GPUTexture* gpu_obj_model::get_palette()
-{
-    return palette;
 }
 
 int gpu_obj_model::get_num_indices() const

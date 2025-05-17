@@ -1,7 +1,19 @@
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_main.h>
 
+#include <imgui.h>
+#include <imgui_impl_sdl3.h>
+
 #include <print>
+
+#include "components.hpp"
+#include "graphics.hpp"
+
+#ifndef NDEBUG
+static constexpr bool debugging = true;
+#else
+static constexpr bool debugging = false;
+#endif
 
 int main(int argc, char** argv)
 {
@@ -11,6 +23,12 @@ int main(int argc, char** argv)
     if (!SDL_Init(SDL_INIT_VIDEO))
     {
         std::println("Failed to initialize SDL: {}", SDL_GetError());
+        return 1;
+    }
+
+    if (!graphics::init(debugging))
+    {
+        std::println("Failed to initialize graphics");
         return 1;
     }
 
@@ -26,8 +44,17 @@ int main(int argc, char** argv)
                 running = false;
                 break;
             }
+
+            if (debugging)
+            {
+                ImGui_ImplSDL3_ProcessEvent(&event);
+            }
         }
+
+        graphics::draw();
     }
+
+    graphics::quit();
 
     SDL_Quit();
 
