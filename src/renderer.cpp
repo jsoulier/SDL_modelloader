@@ -10,12 +10,52 @@
 #include <unordered_map>
 #include <utility>
 
+#include "camera.hpp"
 #include "buffer.hpp"
 #include "loaders.hpp"
 #include "math.hpp"
 #include "model.hpp"
 #include "renderer.hpp"
 #include "voxel.hpp"
+
+enum ShaderId
+{
+    shader_model_frag,
+    shader_model_vert,
+    shader_count,
+};
+
+enum GraphicsPipelineId
+{
+    graphics_pipeline_model,
+    graphics_pipeline_count,
+};
+
+enum ComputePipelineId
+{
+    compute_pipeline_sampler,
+    compute_pipeline_count,
+};
+
+enum SamplerId
+{
+    sampler_nearest,
+    sampler_linear,
+    sampler_count,
+};
+
+enum AttachmentId
+{
+    attachment_color,
+    attachment_depth,
+    attachment_count,
+};
+
+enum CameraId
+{
+    camera_default,
+    camera_count,
+};
 
 static constexpr int window_width = 960;
 static constexpr int window_height = 720;
@@ -35,6 +75,8 @@ static std::array<SDL_GPUTexture*, attachment_count> attachments;
 
 static std::array<Model, model_count> models;
 static std::array<Buffer<Transform>, model_count> instances;
+
+static std::array<Camera, camera_count> cameras;
 
 static int swapchain_width;
 static int swapchain_height;
@@ -182,10 +224,23 @@ void shutdown_renderer()
     SDL_DestroyWindow(window);
 }
 
-void render()
+void wait_for_renderer()
 {
     SDL_WaitForGPUSwapchain(device, window);
+}
 
+void move_renderer(const Transform& transform)
+{
+    cameras[camera_default].set_target(transform.position);
+}
+
+void render_model(ModelId model, const Transform& transform)
+{
+    instances[model].push_back(device, transform);
+}
+
+void render_frame(float dt)
+{
     SDL_GPUCommandBuffer* command_buffer = SDL_AcquireGPUCommandBuffer(device);
     if (!command_buffer)
     {
@@ -197,9 +252,15 @@ void render()
     uint32_t width;
     uint32_t height;
 
-    if (SDL_AcquireGPUSwapchainTexture(command_buffer, window, &swapchain_texture, &width, &height))
+    if (!SDL_AcquireGPUSwapchainTexture(command_buffer, window, &swapchain_texture, &width, &height))
     {
         std::println("Failed to acquire swapchain texture: {}", SDL_GetError());
+        SDL_SubmitGPUCommandBuffer(command_buffer);
+        return;
+    }
+
+    if (width == 0 || height == 0)
+    {
         SDL_SubmitGPUCommandBuffer(command_buffer);
         return;
     }
@@ -223,6 +284,14 @@ void render()
             SDL_SubmitGPUCommandBuffer(command_buffer);
             return;
         }
+
+        cameras[camera_default].set_width(width);
+        cameras[camera_default].set_height(height);
+    }
+
+    for (auto& camera : cameras)
+    {
+        camera.update(dt);
     }
 
     SDL_SubmitGPUCommandBuffer(command_buffer);
@@ -290,7 +359,12 @@ static bool init_models(SDL_GPUCopyPass* copy_pass)
 {
     std::unordered_map<ModelId, std::string> names =
     {
+        {model_dirt, "dirt"},
         {model_grass, "grass"},
+        {model_player, "player"},
+        {model_sand, "sand"},
+        {model_tree, "tree"},
+        {model_water, "water"},
     };
 
     for (auto& [model, name] : names)

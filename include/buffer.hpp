@@ -10,9 +10,9 @@ template<typename T>
 class Buffer
 {
 public:
-    Buffer()
+    Buffer(SDL_GPUBufferUsageFlags buffer_usage = SDL_GPU_BUFFERUSAGE_VERTEX)
         : transfer_buffer{nullptr}
-        , buffer_usage{SDL_GPU_BUFFERUSAGE_VERTEX}
+        , buffer_usage{buffer_usage}
         , buffer{nullptr}
         , data{nullptr}
         , size{0}

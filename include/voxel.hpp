@@ -29,7 +29,7 @@ namespace std
     template<>
     struct hash<Voxel>
     {
-        size_t operator()(const Voxel& voxel) const
+        size_t operator()(const Voxel voxel) const
         {
             size_t h1 = std::hash<uint32_t>{}(voxel.packed);
             size_t h2 = std::hash<float>{}(voxel.texcoord);

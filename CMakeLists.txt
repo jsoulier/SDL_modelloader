@@ -42,6 +42,8 @@ add_executable(lilcraft WIN32
     src/camera.cpp
     src/database.cpp
     src/entity.cpp
+    src/entity/mob.cpp
+    src/entity/player.cpp
     src/item.cpp
     src/loaders.cpp
     src/main.cpp
@@ -61,6 +63,7 @@ target_link_libraries(lilcraft PUBLIC glm)
 target_link_libraries(lilcraft PUBLIC nlohmann_json)
 target_link_libraries(lilcraft PUBLIC sqlite3)
 target_link_libraries(lilcraft PUBLIC tinyobjloader)
+target_compile_definitions(lilcraft PUBLIC GLM_FORCE_DEPTH_ZERO_TO_ONE)
 
 function(add_shader FILE)
     set(SHADERCROSS lib/SDL_shadercross/shadercross.exe)
@@ -107,7 +110,12 @@ function(add_model NAME)
     file(COPY models/${NAME}.obj DESTINATION ${BINARY_DIR})
     file(COPY models/${NAME}.png DESTINATION ${BINARY_DIR})
 endfunction()
+add_model(dirt)
 add_model(grass)
+add_model(player)
+add_model(sand)
+add_model(tree)
+add_model(water)
 
 file(COPY LICENSE.txt DESTINATION ${BINARY_DIR})
 file(COPY README.md DESTINATION ${BINARY_DIR})
