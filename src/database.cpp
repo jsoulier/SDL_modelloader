@@ -7,12 +7,12 @@
 
 static sqlite3* handle;
 
-bool init_database()
+bool Database::init()
 {
     return true;
 }
 
-void shutdown_database()
+void Database::shutdown()
 {
 
 }

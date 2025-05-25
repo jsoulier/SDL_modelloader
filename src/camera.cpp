@@ -1,3 +1,6 @@
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+
 #include <cassert>
 #include <cmath>
 #include <limits>
@@ -7,6 +10,8 @@
 
 void Camera::update(float dt)
 {
+    /* TODO: incorporate dt */
+
     static constexpr glm::vec3 up{0.0f, 1.0f, 0.0f};
 
     glm::vec3 forward;
@@ -15,19 +20,17 @@ void Camera::update(float dt)
     forward.z = std::sin(yaw) * std::cos(pitch);
     forward = glm::normalize(forward);
 
-    // float a = 1.0f - std::exp(-speed * dt);
-    float a = 1.0f;
-    position = glm::mix(position, target - forward * distance, a);
+    position = glm::mix(position, target - forward * distance, speed);
 
     glm::mat4 view = glm::lookAt(position, position + forward, up);
     glm::mat4 proj;
 
     switch (type)
     {
-    case camera_type_perspective:
+    case CAMERA_PERSPECTIVE:
         proj = glm::perspective(fov, width / height, near, far);
         break;
-    case camera_type_ortho_3d:
+    case CAMERA_ORTHO_3D:
         proj = glm::ortho(0.0f, width, height, 0.0f);
         break;
     default:
@@ -130,6 +133,11 @@ void Camera::set_speed(float speed)
 const glm::mat4& Camera::get_matrix() const
 {
     return matrix;
+}
+
+const glm::vec3& Camera::get_position() const
+{
+    return position;
 }
 
 const glm::vec3& Camera::get_target() const

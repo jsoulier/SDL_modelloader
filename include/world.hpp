@@ -1,16 +1,27 @@
 #pragma once
 
-enum FloorId
+#include <memory>
+
+class Entity;
+
+enum LevelId
 {
     /* Don't change the order! */
-    floor_overworld,
-    floor_count,
+    LEVEL_OVERWORLD,
+    LEVEL_COUNT,
 };
 
-bool init_world();
+namespace World
+{
 
-void shutdown_world();
+bool init();
 
-void update_world(float dt);
+void shutdown();
 
-void render_world();
+std::shared_ptr<Entity> get_player();
+
+void update(float dt);
+
+void draw();
+
+}

@@ -6,7 +6,7 @@
 #include "entity/mob.hpp"
 #include "entity/player.hpp"
 
-std::shared_ptr<Entity> create_entity(EntityType type, void* args)
+std::shared_ptr<Entity> Entity::create(EntityType type, void* args)
 {
     /* TODO: Allocation strategy */
 
@@ -14,18 +14,18 @@ std::shared_ptr<Entity> create_entity(EntityType type, void* args)
     switch (type)
     {
 
-    case entity_player:
+    case ENTITY_PLAYER:
         entity = std::make_shared<PlayerEntity>();
         break;
 
-    case entity_drop:
+    case ENTITY_DROP:
         if (args)
         {
-            entity = std::make_shared<DropEntity>();
+            entity = std::make_shared<DropEntity>(*static_cast<Item*>(args));
         }
         else
         {
-            entity = std::make_shared<DropEntity>(*static_cast<Item*>(args));
+            entity = std::make_shared<DropEntity>();
         }
         break;
 
@@ -37,4 +37,9 @@ std::shared_ptr<Entity> create_entity(EntityType type, void* args)
     }
 
     return entity;
+}
+
+const Transform& Entity::get_transform() const
+{
+    return transform;
 }

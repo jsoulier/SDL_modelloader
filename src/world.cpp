@@ -6,36 +6,46 @@
 #include "tile.hpp"
 #include "world.hpp"
 
-struct Floor
+struct Level
 {
     std::vector<std::shared_ptr<Entity>> entities;
 };
 
-static std::array<Floor, floor_count> floors;
+static std::array<Level, LEVEL_COUNT> levels;
+static std::shared_ptr<Entity> player;
 
-static FloorId current_floor;
+static LevelId level;
 
-bool init_world()
+bool World::init()
 {
+    player = Entity::create(ENTITY_PLAYER);
+
+    levels[level].entities.push_back(player);
+
     return true;
 }
 
-void shutdown_world()
+void World::shutdown()
 {
 
 }
 
-void update_world(float dt)
+std::shared_ptr<Entity> World::get_player()
 {
-    for (auto& entity : floors[current_floor].entities)
+    return player;
+}
+
+void World::update(float dt)
+{
+    for (auto& entity : levels[level].entities)
     {
         entity->update(dt);
     }
 }
 
-void render_world()
+void World::draw()
 {
-    for (auto& entity : floors[current_floor].entities)
+    for (auto& entity : levels[level].entities)
     {
         entity->render();
     }

@@ -11,6 +11,7 @@ public:
 
     void update(float dt) override;
     void render() const override;
+    EntityType get_type() const override;
 
 private:
     Item item;

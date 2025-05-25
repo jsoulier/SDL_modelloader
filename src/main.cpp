@@ -1,11 +1,13 @@
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_main.h>
 
+#include <memory>
 #include <cstdint>
 #include <print>
 
-#include "math.hpp"
 #include "database.hpp"
+#include "entity.hpp"
+#include "math.hpp"
 #include "renderer.hpp"
 #include "world.hpp"
 
@@ -26,19 +28,19 @@ int main(int argc, char** argv)
         return 1;
     }
 
-    if (!init_database())
+    if (!Database::init())
     {
         std::println("Failed to initialize database");
         return 1;
     }
 
-    if (!init_world())
+    if (!World::init())
     {
         std::println("Failed to initialize world");
         return 1;
     }
 
-    if (!init_renderer(debug))
+    if (!Renderer::init(debug))
     {
         std::println("Failed to initialize renderer");
         return 1;
@@ -65,15 +67,22 @@ int main(int argc, char** argv)
             }
         }
 
-        wait_for_renderer();
-        move_renderer(Transform{});
-        render_model(model_grass, Transform{});
-        render_frame(dt);
+        Renderer::wait();
+
+        std::shared_ptr<Entity> player = World::get_player();
+
+        Renderer::move(player->get_transform());
+        Renderer::draw(MODEL_TREE, Transform{});
+
+        World::update(dt);
+        World::draw();
+
+        Renderer::submit(dt);
     }
 
-    shutdown_renderer();
-    shutdown_world();
-    shutdown_database();
+    Renderer::shutdown();
+    World::shutdown();
+    Database::shutdown();
 
     SDL_Quit();
 

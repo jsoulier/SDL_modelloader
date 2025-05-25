@@ -1,26 +1,35 @@
 #pragma once
 
-struct Transform;
+#include "math.hpp"
 
 enum ModelId
 {
-    model_dirt,
-    model_grass,
-    model_player,
-    model_sand,
-    model_tree,
-    model_water,
-    model_count,
+    MODEL_DIRT,
+    MODEL_GRASS,
+    MODEL_PLAYER,
+    MODEL_SAND,
+    MODEL_TREE,
+    MODEL_WATER,
+    MODEL_COUNT,
 };
 
-bool init_renderer(bool debug);
+namespace Renderer
+{
 
-void shutdown_renderer();
+bool init(bool debug);
 
-void wait_for_renderer();
+void shutdown();
 
-void move_renderer(const Transform& transform);
+void wait();
 
-void render_model(ModelId model, const Transform& transform);
+void move(const Transform& transform);
 
-void render_frame(float dt);
+const glm::vec2& get_min();
+
+const glm::vec2& get_max();
+
+void draw(ModelId model, const Transform& transform);
+
+void submit(float dt);
+
+}

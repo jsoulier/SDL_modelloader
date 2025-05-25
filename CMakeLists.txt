@@ -49,6 +49,7 @@ add_executable(lilcraft WIN32
     src/loaders.cpp
     src/main.cpp
     src/model.cpp
+    src/noise.cpp
     src/renderer.cpp
     src/tile.cpp
     src/voxel.cpp

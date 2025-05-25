@@ -4,15 +4,15 @@
 
 enum CameraType
 {
-    camera_type_perspective,
-    camera_type_ortho_3d,
+    CAMERA_PERSPECTIVE,
+    CAMERA_ORTHO_3D,
 };
 
 class Camera
 {
 public:
     Camera()
-        : type{camera_type_perspective}
+        : type{CAMERA_PERSPECTIVE}
         , matrix{}
         , position{}
         , target{}
@@ -42,6 +42,7 @@ public:
     void set_speed(float speed);
 
     const glm::mat4& get_matrix() const;
+    const glm::vec3& get_position() const;
     const glm::vec3& get_target() const;
     const glm::vec2& get_min() const;
     const glm::vec2& get_max() const;

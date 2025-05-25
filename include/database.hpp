@@ -1,5 +1,10 @@
 #pragma once
 
-bool init_database();
+namespace Database
+{
 
-void shutdown_database();
+bool init();
+
+void shutdown();
+
+}

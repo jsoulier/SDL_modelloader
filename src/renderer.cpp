@@ -20,41 +20,41 @@
 
 enum ShaderId
 {
-    shader_model_frag,
-    shader_model_vert,
-    shader_count,
+    SHADER_MODEL_FRAG,
+    SHADER_MODEL_VERT,
+    SHADER_COUNT,
 };
 
 enum GraphicsPipelineId
 {
-    graphics_pipeline_model,
-    graphics_pipeline_count,
+    GRAPHICS_PIPELINE_MODEL,
+    GRAPHICS_PIPELINE_COUNT,
 };
 
 enum ComputePipelineId
 {
-    compute_pipeline_sampler,
-    compute_pipeline_count,
+    COMPUTE_PIPELINE_SAMPLER,
+    COMPUTE_PIPELINE_COUNT,
 };
 
 enum SamplerId
 {
-    sampler_nearest,
-    sampler_linear,
-    sampler_count,
+    SAMPLER_NEAREST,
+    SAMPLER_LINEAR,
+    SAMPLER_COUNT,
 };
 
 enum AttachmentId
 {
-    attachment_color,
-    attachment_depth,
-    attachment_count,
+    ATTACHMENT_COLOR,
+    ATTACHMENT_DEPTH,
+    ATTACHMENT_COUNT,
 };
 
 enum CameraId
 {
-    camera_pov,
-    camera_count,
+    CAMERA_POV,
+    CAMERA_COUNT,
 };
 
 static constexpr int window_width = 960;
@@ -67,16 +67,16 @@ static SDL_GPUDevice* device;
 static SDL_GPUTextureFormat color_texture_format;
 static SDL_GPUTextureFormat depth_texture_format;
 
-static std::array<SDL_GPUShader*, shader_count> shaders;
-static std::array<SDL_GPUGraphicsPipeline*, graphics_pipeline_count> graphics_pipelines;
-static std::array<SDL_GPUComputePipeline*, compute_pipeline_count> compute_pipelines;
-static std::array<SDL_GPUSampler*, sampler_count> samplers;
-static std::array<SDL_GPUTexture*, attachment_count> attachments;
+static std::array<SDL_GPUShader*, SHADER_COUNT> shaders;
+static std::array<SDL_GPUGraphicsPipeline*, GRAPHICS_PIPELINE_COUNT> graphics_pipelines;
+static std::array<SDL_GPUComputePipeline*, COMPUTE_PIPELINE_COUNT> compute_pipelines;
+static std::array<SDL_GPUSampler*, SAMPLER_COUNT> samplers;
+static std::array<SDL_GPUTexture*, ATTACHMENT_COUNT> attachments;
 
-static std::array<Model, model_count> models;
-static std::array<Buffer<Transform>, model_count> instances;
+static std::array<Model, MODEL_COUNT> models;
+static std::array<Buffer<Transform>, MODEL_COUNT> instances;
 
-static std::array<Camera, camera_count> cameras;
+static std::array<Camera, CAMERA_COUNT> cameras;
 
 static int swapchain_width;
 static int swapchain_height;
@@ -109,7 +109,7 @@ static void upload_instances(SDL_GPUCommandBuffer* command_buffer);
 static void render_pov(SDL_GPUCommandBuffer* command_buffer);
 static void render_swapchain(SDL_GPUCommandBuffer* command_buffer, SDL_GPUTexture* swapchain_texture);
 
-bool init_renderer(bool debug)
+bool Renderer::init(bool debug)
 {
     SDL_PropertiesID properties = SDL_CreateProperties();
     if (!properties)
@@ -208,7 +208,7 @@ bool init_renderer(bool debug)
     return true;
 }
 
-void shutdown_renderer()
+void Renderer::shutdown()
 {
     free_shaders();
     free_graphics_pipelines();
@@ -231,22 +231,32 @@ void shutdown_renderer()
     SDL_DestroyWindow(window);
 }
 
-void wait_for_renderer()
+void Renderer::wait()
 {
     SDL_WaitForGPUSwapchain(device, window);
 }
 
-void move_renderer(const Transform& transform)
+void Renderer::move(const Transform& transform)
 {
-    cameras[camera_pov].set_target(transform.position);
+    cameras[CAMERA_POV].set_target(transform.position);
 }
 
-void render_model(ModelId model, const Transform& transform)
+const glm::vec2& Renderer::get_min()
+{
+    return cameras[CAMERA_POV].get_min();
+}
+
+const glm::vec2& Renderer::get_max()
+{
+    return cameras[CAMERA_POV].get_max();
+}
+
+void Renderer::draw(ModelId model, const Transform& transform)
 {
     instances[model].push_back(device, transform);
 }
 
-void render_frame(float dt)
+void Renderer::submit(float dt)
 {
     SDL_GPUCommandBuffer* command_buffer = SDL_AcquireGPUCommandBuffer(device);
     if (!command_buffer)
@@ -292,8 +302,8 @@ void render_frame(float dt)
             return;
         }
 
-        cameras[camera_pov].set_width(texture_width);
-        cameras[camera_pov].set_height(texture_height);
+        cameras[CAMERA_POV].set_width(texture_width);
+        cameras[CAMERA_POV].set_height(texture_height);
     }
 
     for (auto& camera : cameras)
@@ -320,8 +330,8 @@ static bool init_shaders()
 {
     std::unordered_map<ShaderId, std::string> names =
     {
-        {shader_model_frag, "model.frag"},
-        {shader_model_vert, "model.vert"},
+        {SHADER_MODEL_FRAG, "model.frag"},
+        {SHADER_MODEL_VERT, "model.vert"},
     };
 
     for (auto& [shader, name] : names)
@@ -340,7 +350,7 @@ static bool init_graphics_pipelines()
 {
     std::unordered_map<GraphicsPipelineId, std::function<SDL_GPUGraphicsPipeline*()>> funcs =
     {
-        {graphics_pipeline_model, create_model_graphics_pipeline},
+        {GRAPHICS_PIPELINE_MODEL, create_model_graphics_pipeline},
     };
 
     for (auto& [graphics_pipeline, func] : funcs)
@@ -359,7 +369,7 @@ static bool init_compute_pipelines()
 {
     std::unordered_map<ComputePipelineId, std::string> names =
     {
-        {compute_pipeline_sampler, "sampler.comp"},
+        {COMPUTE_PIPELINE_SAMPLER, "sampler.comp"},
     };
 
     for (auto& [compute_pipeline, name] : names)
@@ -378,12 +388,12 @@ static bool init_models(SDL_GPUCopyPass* copy_pass)
 {
     std::unordered_map<ModelId, std::string> names =
     {
-        {model_dirt, "dirt"},
-        {model_grass, "grass"},
-        {model_player, "player"},
-        {model_sand, "sand"},
-        {model_tree, "tree"},
-        {model_water, "water"},
+        {MODEL_DIRT, "dirt"},
+        {MODEL_GRASS, "grass"},
+        {MODEL_PLAYER, "player"},
+        {MODEL_SAND, "sand"},
+        {MODEL_TREE, "tree"},
+        {MODEL_WATER, "water"},
     };
 
     for (auto& [model, name] : names)
@@ -402,8 +412,8 @@ static bool init_samplers()
 {
     std::unordered_map<SamplerId, std::function<SDL_GPUSampler*()>> funcs =
     {
-        {sampler_nearest, create_nearest_sampler},
-        {sampler_linear, create_linear_sampler},
+        {SAMPLER_NEAREST, create_nearest_sampler},
+        {SAMPLER_LINEAR, create_linear_sampler},
     };
 
     for (auto& [sampler, func] : funcs)
@@ -422,8 +432,8 @@ static bool init_attachments(int width, int height)
 {
     std::unordered_map<AttachmentId, std::function<SDL_GPUTexture*(int, int)>> funcs =
     {
-        {attachment_color, create_color_attachment},
-        {attachment_depth, create_depth_attachment},
+        {ATTACHMENT_COLOR, create_color_attachment},
+        {ATTACHMENT_DEPTH, create_depth_attachment},
     };
 
     for (auto& [attachment, func] : funcs)
@@ -440,19 +450,20 @@ static bool init_attachments(int width, int height)
 
 static void init_cameras()
 {
-    cameras[camera_pov].set_type(camera_type_perspective);
-    cameras[camera_pov].set_distance(150.0f);
-    cameras[camera_pov].set_fov(60.0f);
-    cameras[camera_pov].set_pitch(-60.0f);
-    cameras[camera_pov].set_speed(1.0f);
+    cameras[CAMERA_POV].set_type(CAMERA_PERSPECTIVE);
+    cameras[CAMERA_POV].set_distance(150.0f);
+    cameras[CAMERA_POV].set_fov(60.0f);
+    cameras[CAMERA_POV].set_pitch(-60.0f);
+    cameras[CAMERA_POV].set_yaw(-90.0f);
+    cameras[CAMERA_POV].set_speed(0.3f);
 }
 
 static SDL_GPUGraphicsPipeline* create_model_graphics_pipeline()
 {
     SDL_GPUGraphicsPipelineCreateInfo info{};
 
-    info.vertex_shader = shaders[shader_model_vert];
-    info.fragment_shader = shaders[shader_model_frag];
+    info.vertex_shader = shaders[SHADER_MODEL_VERT];
+    info.fragment_shader = shaders[SHADER_MODEL_FRAG];
 
     SDL_GPUColorTargetDescription targets[] =
     {{
@@ -598,7 +609,7 @@ static SDL_GPUTexture* create_depth_attachment(int width, int height)
 
 static void free_shaders()
 {
-    for (int i = 0; i < shader_count; i++)
+    for (int i = 0; i < SHADER_COUNT; i++)
     {
         if (shaders[i])
         {
@@ -610,7 +621,7 @@ static void free_shaders()
 
 static void free_graphics_pipelines()
 {
-    for (int i = 0; i < graphics_pipeline_count; i++)
+    for (int i = 0; i < GRAPHICS_PIPELINE_COUNT; i++)
     {
         if (graphics_pipelines[i])
         {
@@ -622,7 +633,7 @@ static void free_graphics_pipelines()
 
 static void free_compute_pipelines()
 {
-    for (int i = 0; i < compute_pipeline_count; i++)
+    for (int i = 0; i < COMPUTE_PIPELINE_COUNT; i++)
     {
         if (compute_pipelines[i])
         {
@@ -634,7 +645,7 @@ static void free_compute_pipelines()
 
 static void free_samplers()
 {
-    for (int i = 0; i < sampler_count; i++)
+    for (int i = 0; i < SAMPLER_COUNT; i++)
     {
         if (samplers[i])
         {
@@ -646,7 +657,7 @@ static void free_samplers()
 
 static void free_attachments()
 {
-    for (int i = 0; i < attachment_count; i++)
+    for (int i = 0; i < ATTACHMENT_COUNT; i++)
     {
         if (attachments[i])
         {
@@ -676,13 +687,13 @@ static void upload_instances(SDL_GPUCommandBuffer* command_buffer)
 static void render_pov(SDL_GPUCommandBuffer* command_buffer)
 {
     SDL_GPUColorTargetInfo color_info{};
-    color_info.texture = attachments[attachment_color];
+    color_info.texture = attachments[ATTACHMENT_COLOR];
     color_info.load_op = SDL_GPU_LOADOP_CLEAR;
     color_info.store_op = SDL_GPU_STOREOP_STORE;
     color_info.cycle = true;
 
     SDL_GPUDepthStencilTargetInfo depth_info{};
-    depth_info.texture = attachments[attachment_depth];
+    depth_info.texture = attachments[ATTACHMENT_DEPTH];
     depth_info.clear_depth = 1.0f;
     depth_info.load_op = SDL_GPU_LOADOP_CLEAR;
     depth_info.stencil_load_op = SDL_GPU_LOADOP_CLEAR;
@@ -696,10 +707,10 @@ static void render_pov(SDL_GPUCommandBuffer* command_buffer)
         return;
     }
 
-    SDL_BindGPUGraphicsPipeline(render_pass, graphics_pipelines[graphics_pipeline_model]);
-    SDL_PushGPUVertexUniformData(command_buffer, 0, &cameras[camera_pov].get_matrix(), 64);
+    SDL_BindGPUGraphicsPipeline(render_pass, graphics_pipelines[GRAPHICS_PIPELINE_MODEL]);
+    SDL_PushGPUVertexUniformData(command_buffer, 0, &cameras[CAMERA_POV].get_matrix(), 64);
 
-    for (int i = 0; i < model_count; i++)
+    for (int i = 0; i < MODEL_COUNT; i++)
     {
         Model& model = models[i];
         Buffer<Transform>& instance = instances[i];
@@ -717,7 +728,7 @@ static void render_pov(SDL_GPUCommandBuffer* command_buffer)
         index_buffer.buffer = model.get_index_buffer();
 
         SDL_GPUTextureSamplerBinding texture{};
-        texture.sampler = samplers[sampler_nearest];
+        texture.sampler = samplers[SAMPLER_NEAREST];
         texture.texture = model.get_palette();
 
         SDL_BindGPUVertexBuffers(render_pass, 0, vertex_buffers, 2);
@@ -736,7 +747,7 @@ static void render_swapchain(SDL_GPUCommandBuffer* command_buffer, SDL_GPUTextur
 
     info.filter = SDL_GPU_FILTER_NEAREST;
 
-    info.source.texture = attachments[attachment_color];
+    info.source.texture = attachments[ATTACHMENT_COLOR];
     info.source.x = 0;
     info.source.y = 0;
     info.source.w = texture_width;

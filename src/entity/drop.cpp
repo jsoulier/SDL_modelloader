@@ -9,3 +9,8 @@ void DropEntity::render() const
 {
 
 }
+
+EntityType DropEntity::get_type() const
+{
+    return ENTITY_DROP;
+}
