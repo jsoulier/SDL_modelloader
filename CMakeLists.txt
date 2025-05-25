@@ -42,6 +42,7 @@ add_executable(lilcraft WIN32
     src/camera.cpp
     src/database.cpp
     src/entity.cpp
+    src/entity/drop.cpp
     src/entity/mob.cpp
     src/entity/player.cpp
     src/item.cpp

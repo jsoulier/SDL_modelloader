@@ -10,3 +10,7 @@ enum FloorId
 bool init_world();
 
 void shutdown_world();
+
+void update_world(float dt);
+
+void render_world();

@@ -4,7 +4,7 @@
 
 #include "voxel.hpp"
 
-Voxel::Voxel(int vx, int vy, int vz, int tx, int nx, int ny, int nz)
+Voxel::Voxel(int vx, int vy, int vz, float tx, int nx, int ny, int nz)
 {
     packed = 0;
     texcoord = tx;

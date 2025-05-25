@@ -53,7 +53,7 @@ enum AttachmentId
 
 enum CameraId
 {
-    camera_default,
+    camera_pov,
     camera_count,
 };
 
@@ -97,12 +97,17 @@ static bool init_compute_pipelines();
 static bool init_models(SDL_GPUCopyPass* copy_pass);
 static bool init_samplers();
 static bool init_attachments(int width, int height);
+static void init_cameras();
 
 static void free_shaders();
 static void free_graphics_pipelines();
 static void free_compute_pipelines();
 static void free_samplers();
 static void free_attachments();
+
+static void upload_instances(SDL_GPUCommandBuffer* command_buffer);
+static void render_pov(SDL_GPUCommandBuffer* command_buffer);
+static void render_swapchain(SDL_GPUCommandBuffer* command_buffer, SDL_GPUTexture* swapchain_texture);
 
 bool init_renderer(bool debug)
 {
@@ -195,6 +200,8 @@ bool init_renderer(bool debug)
         return false;
     }
 
+    init_cameras();
+
     SDL_EndGPUCopyPass(copy_pass);
     SDL_SubmitGPUCommandBuffer(command_buffer);
 
@@ -231,7 +238,7 @@ void wait_for_renderer()
 
 void move_renderer(const Transform& transform)
 {
-    cameras[camera_default].set_target(transform.position);
+    cameras[camera_pov].set_target(transform.position);
 }
 
 void render_model(ModelId model, const Transform& transform)
@@ -273,7 +280,7 @@ void render_frame(float dt)
         texture_height = static_cast<float>(target_width) / aspect_ratio;
 
         free_attachments();
-        if (init_attachments(width, height))
+        if (init_attachments(texture_width, texture_height))
         {
             swapchain_width = width;
             swapchain_height = height;
@@ -285,14 +292,26 @@ void render_frame(float dt)
             return;
         }
 
-        cameras[camera_default].set_width(width);
-        cameras[camera_default].set_height(height);
+        cameras[camera_pov].set_width(texture_width);
+        cameras[camera_pov].set_height(texture_height);
     }
 
     for (auto& camera : cameras)
     {
         camera.update(dt);
     }
+
+    SDL_PushGPUDebugGroup(command_buffer, "upload_instances");
+    upload_instances(command_buffer);
+    SDL_PopGPUDebugGroup(command_buffer);
+
+    SDL_PushGPUDebugGroup(command_buffer, "render_pov");
+    render_pov(command_buffer);
+    SDL_PopGPUDebugGroup(command_buffer);
+
+    SDL_PushGPUDebugGroup(command_buffer, "render_swapchain");
+    render_swapchain(command_buffer, swapchain_texture);
+    SDL_PopGPUDebugGroup(command_buffer);
 
     SDL_SubmitGPUCommandBuffer(command_buffer);
 }
@@ -417,6 +436,15 @@ static bool init_attachments(int width, int height)
     }
 
     return true;
+}
+
+static void init_cameras()
+{
+    cameras[camera_pov].set_type(camera_type_perspective);
+    cameras[camera_pov].set_distance(150.0f);
+    cameras[camera_pov].set_fov(60.0f);
+    cameras[camera_pov].set_pitch(-60.0f);
+    cameras[camera_pov].set_speed(1.0f);
 }
 
 static SDL_GPUGraphicsPipeline* create_model_graphics_pipeline()
@@ -626,4 +654,101 @@ static void free_attachments()
             attachments[i] = nullptr;
         }
     }
+}
+
+static void upload_instances(SDL_GPUCommandBuffer* command_buffer)
+{
+    SDL_GPUCopyPass* copy_pass = SDL_BeginGPUCopyPass(command_buffer);
+    if (!copy_pass)
+    {
+        std::println("Failed to begin copy pass: {}", SDL_GetError());
+        return;
+    }
+
+    for (auto& instance : instances)
+    {
+        instance.upload(device, copy_pass);
+    }
+
+    SDL_EndGPUCopyPass(copy_pass);
+}
+
+static void render_pov(SDL_GPUCommandBuffer* command_buffer)
+{
+    SDL_GPUColorTargetInfo color_info{};
+    color_info.texture = attachments[attachment_color];
+    color_info.load_op = SDL_GPU_LOADOP_CLEAR;
+    color_info.store_op = SDL_GPU_STOREOP_STORE;
+    color_info.cycle = true;
+
+    SDL_GPUDepthStencilTargetInfo depth_info{};
+    depth_info.texture = attachments[attachment_depth];
+    depth_info.clear_depth = 1.0f;
+    depth_info.load_op = SDL_GPU_LOADOP_CLEAR;
+    depth_info.stencil_load_op = SDL_GPU_LOADOP_CLEAR;
+    depth_info.store_op = SDL_GPU_STOREOP_STORE;
+    depth_info.cycle = true;
+
+    SDL_GPURenderPass* render_pass = SDL_BeginGPURenderPass(command_buffer, &color_info, 1, &depth_info);
+    if (!render_pass)
+    {
+        std::println("Failed to begin render pass: {}", SDL_GetError());
+        return;
+    }
+
+    SDL_BindGPUGraphicsPipeline(render_pass, graphics_pipelines[graphics_pipeline_model]);
+    SDL_PushGPUVertexUniformData(command_buffer, 0, &cameras[camera_pov].get_matrix(), 64);
+
+    for (int i = 0; i < model_count; i++)
+    {
+        Model& model = models[i];
+        Buffer<Transform>& instance = instances[i];
+
+        if (!instance.get_size())
+        {
+            continue;
+        }
+
+        SDL_GPUBufferBinding vertex_buffers[2]{};
+        vertex_buffers[0].buffer = model.get_vertex_buffer();
+        vertex_buffers[1].buffer = instance.get_buffer();
+
+        SDL_GPUBufferBinding index_buffer{};
+        index_buffer.buffer = model.get_index_buffer();
+
+        SDL_GPUTextureSamplerBinding texture{};
+        texture.sampler = samplers[sampler_nearest];
+        texture.texture = model.get_palette();
+
+        SDL_BindGPUVertexBuffers(render_pass, 0, vertex_buffers, 2);
+        SDL_BindGPUIndexBuffer(render_pass, &index_buffer, SDL_GPU_INDEXELEMENTSIZE_16BIT);
+        SDL_BindGPUFragmentSamplers(render_pass, 0, &texture, 1);
+
+        SDL_DrawGPUIndexedPrimitives(render_pass, model.get_num_indices(), instance.get_size(), 0, 0, 0);
+    }
+
+    SDL_EndGPURenderPass(render_pass);
+}
+
+static void render_swapchain(SDL_GPUCommandBuffer* command_buffer, SDL_GPUTexture* swapchain_texture)
+{
+    SDL_GPUBlitInfo info{};
+
+    info.filter = SDL_GPU_FILTER_NEAREST;
+
+    info.source.texture = attachments[attachment_color];
+    info.source.x = 0;
+    info.source.y = 0;
+    info.source.w = texture_width;
+    info.source.h = texture_height;
+
+    info.destination.texture = swapchain_texture;
+    info.destination.x = 0;
+    info.destination.y = 0;
+    info.destination.w = swapchain_width;
+    info.destination.h = swapchain_height;
+
+    info.load_op = SDL_GPU_LOADOP_DONT_CARE;
+
+    SDL_BlitGPUTexture(command_buffer, &info);
 }

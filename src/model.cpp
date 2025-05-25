@@ -45,12 +45,12 @@ bool Model::load(SDL_GPUDevice* device, SDL_GPUCopyPass* copy_pass, const std::s
             int vx = attrib.vertices[3 * index.vertex_index + 0] * scale;
             int vy = attrib.vertices[3 * index.vertex_index + 1] * scale;
             int vz = attrib.vertices[3 * index.vertex_index + 2] * scale;
-            int tx = attrib.texcoords[2 * index.texcoord_index + 0];
+            float tx = attrib.texcoords[2 * index.texcoord_index + 0];
             int nx = attrib.normals[3 * index.normal_index + 0];
             int ny = attrib.normals[3 * index.normal_index + 1];
             int nz = attrib.normals[3 * index.normal_index + 2];
 
-            Voxel voxel{nx, vy, vz, tx, nx, ny, nz};
+            Voxel voxel{vx, vy, vz, tx, nx, ny, nz};
 
             auto it = unique_vertices.find(voxel);
             if (it == unique_vertices.end())

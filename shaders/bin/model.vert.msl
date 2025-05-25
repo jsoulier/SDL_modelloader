@@ -49,7 +49,7 @@ struct t_matrix
     float4x4 u_matrix;
 };
 
-constant spvUnsafeArray<float3, 6> _98 = spvUnsafeArray<float3, 6>({ float3(1.0, 0.0, 0.0), float3(-1.0, 0.0, 0.0), float3(0.0, 1.0, 0.0), float3(0.0, -1.0, 0.0), float3(0.0, 0.0, 1.0), float3(0.0, 0.0, -1.0) });
+constant spvUnsafeArray<float3, 6> _88 = spvUnsafeArray<float3, 6>({ float3(1.0, 0.0, 0.0), float3(-1.0, 0.0, 0.0), float3(0.0, 1.0, 0.0), float3(0.0, -1.0, 0.0), float3(0.0, 0.0, 1.0), float3(0.0, 0.0, -1.0) });
 
 struct main0_out
 {
@@ -70,23 +70,24 @@ struct main0_in
 static inline __attribute__((always_inline))
 float3 voxel_get_position(thread const uint& _packed)
 {
-    int sign_x = 1 - (2 * int((_packed >> uint(7)) & 1u));
-    int sign_y = 1 - (2 * int((_packed >> uint(15)) & 1u));
-    int sign_z = 1 - (2 * int((_packed >> uint(23)) & 1u));
-    int x = int((_packed >> uint(0)) & 127u);
-    int y = int((_packed >> uint(8)) & 127u);
-    int z = int((_packed >> uint(16)) & 127u);
-    return float3(float(x * sign_x), float(y * sign_y), float(z * sign_z));
+    int3 direction;
+    direction.x = 1 - (2 * int((_packed >> uint(7)) & 1u));
+    direction.y = 1 - (2 * int((_packed >> uint(15)) & 1u));
+    direction.z = 1 - (2 * int((_packed >> uint(23)) & 1u));
+    int3 magnitude;
+    magnitude.x = int((_packed >> uint(0)) & 127u);
+    magnitude.y = int((_packed >> uint(8)) & 127u);
+    magnitude.z = int((_packed >> uint(16)) & 127u);
+    return float3(magnitude * direction);
 }
 
 static inline __attribute__((always_inline))
 float3 voxel_get_normal(thread const uint& _packed)
 {
-    int direction = int((_packed >> uint(24)) & 7u);
-    return _98[direction];
+    return _88[int((_packed >> uint(24)) & 7u)];
 }
 
-vertex main0_out main0(main0_in in [[stage_in]], constant t_matrix& _174 [[buffer(0)]])
+vertex main0_out main0(main0_in in [[stage_in]], constant t_matrix& _169 [[buffer(0)]])
 {
     main0_out out = {};
     float cos_yaw = cos(in.i_yaw);
@@ -97,7 +98,7 @@ vertex main0_out main0(main0_in in [[stage_in]], constant t_matrix& _174 [[buffe
     out.o_uv = float2(in.i_texcoord, 0.5);
     uint param_1 = in.i_packed;
     out.o_normal = fast::normalize(rotation * voxel_get_normal(param_1));
-    out.gl_Position = _174.u_matrix * float4(out.o_position, 1.0);
+    out.gl_Position = _169.u_matrix * float4(out.o_position, 1.0);
     return out;
 }
 

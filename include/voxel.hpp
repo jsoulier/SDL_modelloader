@@ -6,7 +6,7 @@
 
 struct Voxel
 {
-    Voxel(int vx, int vy, int vz, int tx, int nx, int ny, int nz);
+    Voxel(int vx, int vy, int vz, float tx, int nx, int ny, int nz);
     bool operator==(const Voxel other) const;
 
     /*

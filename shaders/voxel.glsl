@@ -15,15 +15,17 @@
 
 vec3 voxel_get_position(uint packed)
 {
-    int sign_x = 1 - 2 * int((packed >> 7)  & 0x1);
-    int sign_y = 1 - 2 * int((packed >> 15) & 0x1);
-    int sign_z = 1 - 2 * int((packed >> 23) & 0x1);
+    ivec3 direction;
+    direction.x = 1 - 2 * int((packed >> 7)  & 0x1);
+    direction.y = 1 - 2 * int((packed >> 15) & 0x1);
+    direction.z = 1 - 2 * int((packed >> 23) & 0x1);
 
-    int x = int((packed >>  0) & 0x7F);
-    int y = int((packed >>  8) & 0x7F);
-    int z = int((packed >> 16) & 0x7F);
+    ivec3 magnitude;
+    magnitude.x = int((packed >>  0) & 0x7F);
+    magnitude.y = int((packed >>  8) & 0x7F);
+    magnitude.z = int((packed >> 16) & 0x7F);
 
-    return vec3(x * sign_x, y * sign_y, z * sign_z);
+    return magnitude * direction;
 }
 
 vec3 voxel_get_normal(uint packed)
@@ -38,8 +40,7 @@ vec3 voxel_get_normal(uint packed)
         vec3( 0.0f, 0.0f,-1.0f)
     );
 
-    int direction = int((packed >> 24) & 0x7);
-    return directions[direction];
+    return directions[int((packed >> 24) & 0x7)];
 }
 
 #endif

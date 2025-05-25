@@ -15,7 +15,8 @@ void Camera::update(float dt)
     forward.z = std::sin(yaw) * std::cos(pitch);
     forward = glm::normalize(forward);
 
-    float a = 1.0f - std::exp(-speed * dt);
+    // float a = 1.0f - std::exp(-speed * dt);
+    float a = 1.0f;
     position = glm::mix(position, target - forward * distance, a);
 
     glm::mat4 view = glm::lookAt(position, position + forward, up);
@@ -59,9 +60,9 @@ void Camera::update(float dt)
 
         glm::vec3 direction = far - near;
 
-        static constexpr float y = 0.0f;
+        static constexpr float intersection = 0.0f;
 
-        float t = (y - near.y) / direction.y;
+        float t = (intersection - near.y) / direction.y;
 
         corner.x = near.x + t * direction.x;
         corner.y = near.z + t * direction.z;
