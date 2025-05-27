@@ -7,9 +7,10 @@ layout(location = 1) in float i_texcoord;
 layout(location = 2) in vec3 i_position;
 layout(location = 3) in float i_yaw;
 
-layout(location = 0) out vec3 o_position;
-layout(location = 1) out flat vec2 o_uv;
-layout(location = 2) out flat vec3 o_normal;
+layout(location = 0) out flat vec2 o_uv;
+// layout(location = 0) out vec3 o_position;
+// layout(location = 1) out flat vec2 o_uv;
+// layout(location = 2) out flat vec3 o_normal;
 
 layout(set = 1, binding = 0) uniform t_matrix
 {
@@ -27,9 +28,10 @@ void main()
         vec3(-sin_yaw, 0.0f, cos_yaw)
     );
 
-    o_position = i_position + rotation * voxel_get_position(i_packed);
+    // o_position = i_position + rotation * voxel_get_position(i_packed);
+    vec3 o_position = i_position + rotation * voxel_get_position(i_packed);
     o_uv = vec2(i_texcoord, 0.5f);
-    o_normal = normalize(rotation * voxel_get_normal(i_packed));
+    // o_normal = normalize(rotation * voxel_get_normal(i_packed));
 
     gl_Position = u_matrix * vec4(o_position, 1.0f);
 }

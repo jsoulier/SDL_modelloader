@@ -10,7 +10,7 @@ struct main0_out
 
 struct main0_in
 {
-    float2 i_uv [[user(locn1), flat]];
+    float2 i_uv [[user(locn0), flat]];
 };
 
 fragment main0_out main0(main0_in in [[stage_in]], texture2d<float> s_palette [[texture(0)]], sampler s_paletteSmplr [[sampler(0)]])

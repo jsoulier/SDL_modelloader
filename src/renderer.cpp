@@ -83,6 +83,8 @@ static int swapchain_height;
 static int texture_width;
 static int texture_height;
 
+static bool debug;
+
 static SDL_GPUGraphicsPipeline* create_model_graphics_pipeline();
 
 static SDL_GPUSampler* create_nearest_sampler();
@@ -109,8 +111,13 @@ static void upload_instances(SDL_GPUCommandBuffer* command_buffer);
 static void render_pov(SDL_GPUCommandBuffer* command_buffer);
 static void render_swapchain(SDL_GPUCommandBuffer* command_buffer, SDL_GPUTexture* swapchain_texture);
 
-bool Renderer::init(bool debug)
+static void push_debug_group(SDL_GPUCommandBuffer* command_buffer, const char* name);
+static void pop_debug_group(SDL_GPUCommandBuffer* command_buffer);
+
+bool Renderer::init(bool debug_requested)
 {
+    debug = debug_requested;
+
     SDL_PropertiesID properties = SDL_CreateProperties();
     if (!properties)
     {
@@ -136,7 +143,7 @@ bool Renderer::init(bool debug)
 
     SDL_SetBooleanProperty(properties, "SDL.gpu.device.create.debugmode", debug);
     SDL_SetBooleanProperty(properties, "SDL.gpu.device.create.verbose", debug);
-    SDL_SetBooleanProperty(properties, "SDL.gpu.device.create.preferlowpower", !debug);
+    SDL_SetBooleanProperty(properties, "SDL.gpu.device.create.preferlowpower", true);
 
     device = SDL_CreateGPUDeviceWithProperties(properties);
     if (!device)
@@ -311,19 +318,53 @@ void Renderer::submit(float dt)
         camera.update(dt);
     }
 
-    SDL_PushGPUDebugGroup(command_buffer, "upload_instances");
+    push_debug_group(command_buffer, "upload_instances");
     upload_instances(command_buffer);
-    SDL_PopGPUDebugGroup(command_buffer);
+    pop_debug_group(command_buffer);
 
-    SDL_PushGPUDebugGroup(command_buffer, "render_pov");
+    push_debug_group(command_buffer, "render_pov");
     render_pov(command_buffer);
-    SDL_PopGPUDebugGroup(command_buffer);
+    pop_debug_group(command_buffer);
 
-    SDL_PushGPUDebugGroup(command_buffer, "render_swapchain");
+    push_debug_group(command_buffer, "render_swapchain");
     render_swapchain(command_buffer, swapchain_texture);
-    SDL_PopGPUDebugGroup(command_buffer);
+    pop_debug_group(command_buffer);
 
     SDL_SubmitGPUCommandBuffer(command_buffer);
+}
+
+static void push_debug_group(SDL_GPUCommandBuffer* command_buffer, const char* name)
+{
+    if (!debug)
+    {
+        return;
+    }
+
+    /* TODO: https://github.com/libsdl-org/SDL/issues/12056 */
+
+    if (SDL_GetGPUShaderFormats(device) & SDL_GPU_SHADERFORMAT_DXIL)
+    {
+        return;
+    }
+
+    SDL_PushGPUDebugGroup(command_buffer, name);
+}
+
+static void pop_debug_group(SDL_GPUCommandBuffer* command_buffer)
+{
+    if (!debug)
+    {
+        return;
+    }
+
+    /* TODO: https://github.com/libsdl-org/SDL/issues/12056 */
+
+    if (SDL_GetGPUShaderFormats(device) & SDL_GPU_SHADERFORMAT_DXIL)
+    {
+        return;
+    }
+
+    SDL_PopGPUDebugGroup(command_buffer);
 }
 
 static bool init_shaders()
@@ -590,9 +631,20 @@ static SDL_GPUTexture* create_color_attachment(int width, int height)
     return SDL_CreateGPUTexture(device, &info);
 }
 
-static SDL_GPUTexture* create_depth_attachment(int width, int height)
+static SDL_GPUTexture* create_depth_texture(int width, int height)
 {
+    SDL_PropertiesID properties = SDL_CreateProperties();
+    if (!properties)
+    {
+        std::println("Failed to create properties");
+        return nullptr;
+    }
+
+    SDL_SetFloatProperty(properties, "SDL.gpu.texture.create.d3d12.clear.depth", 1.0f);
+
     SDL_GPUTextureCreateInfo info{};
+
+    info.props = properties;
 
     info.type = SDL_GPU_TEXTURETYPE_2D;
     info.format = depth_texture_format;
@@ -604,7 +656,16 @@ static SDL_GPUTexture* create_depth_attachment(int width, int height)
 
     info.num_levels = 1;
 
-    return SDL_CreateGPUTexture(device, &info);
+    SDL_GPUTexture* texture = SDL_CreateGPUTexture(device, &info);
+
+    SDL_DestroyProperties(properties);
+
+    return texture;
+}
+
+static SDL_GPUTexture* create_depth_attachment(int width, int height)
+{
+    return create_depth_texture(width, height);
 }
 
 static void free_shaders()
