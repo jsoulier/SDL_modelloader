@@ -15,13 +15,13 @@ namespace World
 {
 
 bool init();
-
 void shutdown();
 
 std::shared_ptr<Entity> get_player();
 
 void update(float dt);
-
 void draw();
+void commit();
+void insert(std::shared_ptr<Entity>& entity, LevelId level = LEVEL_COUNT);
 
 }

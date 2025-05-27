@@ -8,6 +8,7 @@
 #include "database.hpp"
 #include "entity.hpp"
 #include "math.hpp"
+#include "noise.hpp"
 #include "renderer.hpp"
 #include "world.hpp"
 
@@ -28,6 +29,8 @@ int main(int argc, char** argv)
         return 1;
     }
 
+    bool has_save = Database::has_save();
+
     if (!Database::init())
     {
         std::println("Failed to initialize database");
@@ -43,6 +46,19 @@ int main(int argc, char** argv)
     if (!Renderer::init(debug))
     {
         std::println("Failed to initialize renderer");
+        return 1;
+    }
+
+    if (!has_save && !Noise::generate())
+    {
+        std::println("Failed to generate");
+        return 1;
+    }
+
+    std::shared_ptr<Entity> player = World::get_player();
+    if (!player)
+    {
+        std::println("Failed to get player");
         return 1;
     }
 
@@ -69,8 +85,6 @@ int main(int argc, char** argv)
 
         Renderer::wait();
 
-        std::shared_ptr<Entity> player = World::get_player();
-
         Renderer::move(player->get_transform());
         Renderer::draw(MODEL_TREE, Transform{});
 
@@ -79,6 +93,8 @@ int main(int argc, char** argv)
 
         Renderer::submit(dt);
     }
+
+    World::commit();
 
     Renderer::shutdown();
     World::shutdown();

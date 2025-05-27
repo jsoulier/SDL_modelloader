@@ -1,8 +1,11 @@
 #include <array>
 #include <memory>
+#include <print>
 #include <vector>
 
+#include "database.hpp"
 #include "entity.hpp"
+#include "renderer.hpp"
 #include "tile.hpp"
 #include "world.hpp"
 
@@ -14,13 +17,11 @@ struct Level
 static std::array<Level, LEVEL_COUNT> levels;
 static std::shared_ptr<Entity> player;
 
-static LevelId level;
+static LevelId current_level;
 
 bool World::init()
 {
-    player = Entity::create(ENTITY_PLAYER);
-
-    levels[level].entities.push_back(player);
+    Database::select(insert);
 
     return true;
 }
@@ -37,7 +38,7 @@ std::shared_ptr<Entity> World::get_player()
 
 void World::update(float dt)
 {
-    for (auto& entity : levels[level].entities)
+    for (auto& entity : levels[current_level].entities)
     {
         entity->update(dt);
     }
@@ -45,8 +46,42 @@ void World::update(float dt)
 
 void World::draw()
 {
-    for (auto& entity : levels[level].entities)
+    for (auto& entity : levels[current_level].entities)
     {
-        entity->render();
+        Renderer::draw(entity->get_model(), entity->get_transform());
     }
+}
+
+void World::commit()
+{
+    for (auto& entity : levels[current_level].entities)
+    {
+        Database::insert(entity, current_level);
+    }
+}
+
+void World::insert(std::shared_ptr<Entity>& entity, LevelId level)
+{
+    if (entity->get_type() == ENTITY_PLAYER)
+    {
+        if (player)
+        {
+            std::println("Tried to add multiple players");
+            return;
+        }
+
+        player = entity;
+        current_level = level;
+    }
+
+    if (level == LEVEL_COUNT)
+    {
+        levels[current_level].entities.push_back(entity);
+    }
+    else
+    {
+        levels[level].entities.push_back(entity);
+    }
+
+    Database::insert(entity, level);
 }

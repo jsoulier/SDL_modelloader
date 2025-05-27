@@ -5,9 +5,9 @@ void DropEntity::update(float dt)
 
 }
 
-void DropEntity::render() const
+ModelId DropEntity::get_model() const
 {
-
+    return item.get_model();
 }
 
 EntityType DropEntity::get_type() const

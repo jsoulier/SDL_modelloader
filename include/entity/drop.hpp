@@ -10,7 +10,7 @@ public:
         : item{item} {}
 
     void update(float dt) override;
-    void render() const override;
+    ModelId get_model() const override;
     EntityType get_type() const override;
 
 private:

@@ -57,9 +57,9 @@ enum CameraId
     CAMERA_COUNT,
 };
 
-static constexpr int window_width = 960;
-static constexpr int window_height = 720;
-static constexpr int target_width = 512;
+static constexpr int WINDOW_WIDTH = 960;
+static constexpr int WINDOW_HEIGHT = 720;
+static constexpr int TARGET_WIDTH = 512;
 
 static SDL_Window* window;
 static SDL_GPUDevice* device;
@@ -119,8 +119,8 @@ bool Renderer::init(bool debug)
     }
 
     SDL_SetStringProperty(properties, "SDL.window.create.title", "lilcraft");
-    SDL_SetNumberProperty(properties, "SDL.window.create.width", window_width);
-    SDL_SetNumberProperty(properties, "SDL.window.create.height", window_height);
+    SDL_SetNumberProperty(properties, "SDL.window.create.width", WINDOW_WIDTH);
+    SDL_SetNumberProperty(properties, "SDL.window.create.height", WINDOW_HEIGHT);
     SDL_SetBooleanProperty(properties, "SDL.window.create.resizable", true);
 
     window = SDL_CreateWindowWithProperties(properties);
@@ -286,8 +286,8 @@ void Renderer::submit(float dt)
     {
         float aspect_ratio = static_cast<float>(width) / static_cast<float>(height);
 
-        texture_width = target_width;
-        texture_height = static_cast<float>(target_width) / aspect_ratio;
+        texture_width = TARGET_WIDTH;
+        texture_height = static_cast<float>(TARGET_WIDTH) / aspect_ratio;
 
         free_attachments();
         if (init_attachments(texture_width, texture_height))
@@ -455,7 +455,7 @@ static void init_cameras()
     cameras[CAMERA_POV].set_fov(60.0f);
     cameras[CAMERA_POV].set_pitch(-60.0f);
     cameras[CAMERA_POV].set_yaw(-90.0f);
-    cameras[CAMERA_POV].set_speed(0.3f);
+    cameras[CAMERA_POV].set_speed(0.1f);
 }
 
 static SDL_GPUGraphicsPipeline* create_model_graphics_pipeline()

@@ -15,14 +15,14 @@ public:
         , writer{}
         , offset{0} {}
 
-    Serializer(void* data, uint32_t size)
+    Serializer(const void* data, uint32_t size)
         : is_writer(false)
-        , reader{static_cast<uint8_t*>(data), size}
+        , reader{static_cast<uint8_t*>(const_cast<void*>(data)), size}
         , writer{}
         , offset{0} {}
 
     template<typename T>
-    void visit(T& data)
+    void serialize(T& data)
     {
         if (is_writer)
         {
@@ -38,9 +38,14 @@ public:
         }
     }
 
-    const std::vector<uint8_t>& get_writer() const
+    const void* get_data() const
     {
-        return writer;
+        return static_cast<const void*>(writer.data());
+    }
+
+    uint32_t get_size() const
+    {
+        return static_cast<uint32_t>(writer.size());
     }
 
 private:

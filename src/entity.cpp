@@ -1,3 +1,4 @@
+#include <cstdint>
 #include <memory>
 #include <print>
 
@@ -5,10 +6,12 @@
 #include "entity/drop.hpp"
 #include "entity/mob.hpp"
 #include "entity/player.hpp"
+#include "serializer.hpp"
+#include "uuid.hpp"
 
 std::shared_ptr<Entity> Entity::create(EntityType type, void* args)
 {
-    /* TODO: Allocation strategy */
+    /* TODO: better allocation strategy */
 
     std::shared_ptr<Entity> entity;
     switch (type)
@@ -37,6 +40,21 @@ std::shared_ptr<Entity> Entity::create(EntityType type, void* args)
     }
 
     return entity;
+}
+
+void Entity::serialize(Serializer& serializer)
+{
+    serializer.serialize(transform);
+}
+
+UUID Entity::get_uuid() const
+{
+    return uuid;
+}
+
+void Entity::set_uuid(const UUID uuid)
+{
+    this->uuid = uuid;
 }
 
 const Transform& Entity::get_transform() const

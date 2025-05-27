@@ -1,5 +1,6 @@
 #include <limits>
 #include <cmath>
+#include <print>
 
 #include "entity/mob.hpp"
 #include "math.hpp"
@@ -20,10 +21,5 @@ void MobEntity::update(float dt)
     static constexpr float speed = 100.0f;
 
     transform.position += motion * speed * dt;
-    transform.rotation = std::atan2(motion.y, motion.z);
-}
-
-void MobEntity::render() const
-{
-    Renderer::draw(get_model(), get_transform());
+    transform.rotation = std::atan2(motion.z, motion.x);
 }
