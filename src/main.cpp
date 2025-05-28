@@ -86,8 +86,8 @@ int main(int argc, char** argv)
         Renderer::wait();
 
         Renderer::move(player->get_transform());
-        Renderer::draw(MODEL_TREE, Transform{});
 
+        World::move();
         World::update(dt);
         World::draw();
 

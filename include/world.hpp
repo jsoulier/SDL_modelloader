@@ -6,7 +6,7 @@ class Entity;
 
 enum LevelId
 {
-    /* Don't change the order! */
+    /* don't change the order! */
     LEVEL_OVERWORLD,
     LEVEL_COUNT,
 };
@@ -19,6 +19,7 @@ void shutdown();
 
 std::shared_ptr<Entity> get_player();
 
+void move();
 void update(float dt);
 void draw();
 void commit();

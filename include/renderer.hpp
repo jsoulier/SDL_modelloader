@@ -6,6 +6,7 @@ enum ModelId
 {
     MODEL_DIRT,
     MODEL_GRASS,
+    MODEL_INVALID,
     MODEL_PLAYER,
     MODEL_SAND,
     MODEL_TREE,

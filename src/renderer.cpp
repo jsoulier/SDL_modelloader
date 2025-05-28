@@ -431,6 +431,7 @@ static bool init_models(SDL_GPUCopyPass* copy_pass)
     {
         {MODEL_DIRT, "dirt"},
         {MODEL_GRASS, "grass"},
+        {MODEL_INVALID, "invalid"},
         {MODEL_PLAYER, "player"},
         {MODEL_SAND, "sand"},
         {MODEL_TREE, "tree"},

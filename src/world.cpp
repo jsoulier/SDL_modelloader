@@ -3,19 +3,24 @@
 #include <print>
 #include <vector>
 
+#include "config.hpp"
 #include "database.hpp"
 #include "entity.hpp"
 #include "renderer.hpp"
 #include "tile.hpp"
 #include "world.hpp"
+#include "world.hpp"
 
 struct Level
 {
     std::vector<std::shared_ptr<Entity>> entities;
+    std::array<std::array<Tile, WORLD_WIDTH>, WORLD_WIDTH> tiles;
 };
 
 static std::array<Level, LEVEL_COUNT> levels;
 static std::shared_ptr<Entity> player;
+static glm::ivec2 min_tiles;
+static glm::ivec2 max_tiles;
 
 static LevelId current_level;
 
@@ -34,6 +39,11 @@ void World::shutdown()
 std::shared_ptr<Entity> World::get_player()
 {
     return player;
+}
+
+void World::move()
+{
+
 }
 
 void World::update(float dt)

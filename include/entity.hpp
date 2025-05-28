@@ -10,7 +10,7 @@ class Serializer;
 
 enum EntityType
 {
-    /* Don't change the order! */
+    /* don't change the order! */
     ENTITY_PLAYER,
     ENTITY_DROP,
 };
