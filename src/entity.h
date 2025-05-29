@@ -1,5 +1,6 @@
 #pragma once
 
+#include <stdbool.h>
 #include <stdint.h>
 
 typedef struct db_blob db_blob_t;
@@ -8,7 +9,6 @@ typedef enum entity_type
 {
     entity_type_player,
     entity_type_item,
-
     entity_type_count,
 }
 entity_type_t;

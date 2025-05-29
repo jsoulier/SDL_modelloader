@@ -11,6 +11,10 @@ void e_item_init(entity_t* entity, void* args)
     {
         item->item = *(item_t*) args;
     }
+    else
+    {
+        /* TODO: default initialize */
+    }
 }
 
 void e_item_blob(entity_t* entity, db_blob_t* blob)

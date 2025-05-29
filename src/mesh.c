@@ -1,12 +1,14 @@
 #include <SDL3/SDL.h>
 #include <stb_ds.h>
 #include <fast_obj.h>
+
 #include <assert.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
+
 #include "mesh.h"
 #include "util.h"
 

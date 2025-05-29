@@ -1,7 +1,9 @@
 #include <assert.h>
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdlib.h>
+
 #include "db.h"
 #include "e/item.h"
 #include "e/mob.h"
@@ -52,7 +54,6 @@ entity_t* entity_create_args(entity_type_t type, void* args)
     entity->z = 0.0f;
     entity->rotation = 0.0f;
 
-    assert(vtable[type].init);
     vtable[type].init(entity, args);
 
     return entity;
@@ -77,6 +78,5 @@ void entity_blob(entity_t* entity, db_blob_t* blob)
     db_blob_float(blob, &entity->y);
     db_blob_float(blob, &entity->z);
 
-    assert(vtable[entity->type].blob);
     vtable[entity->type].blob(entity, blob);
 }
