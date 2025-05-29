@@ -14,4 +14,5 @@ static const bool is_debugging = false;
 #define warning(...) SDL_Log("[WARNING] " __VA_ARGS__)
 #define error(...) SDL_Log("[ERROR] " __VA_ARGS__)
 
+SDL_GPUShader* load_shader(SDL_GPUDevice* device, const char* name);
 SDL_GPUTexture* load_texture(SDL_GPUDevice* device, SDL_GPUCopyPass* copy_pass, const char* path);

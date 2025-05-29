@@ -30,6 +30,7 @@ add_executable(lilcraft WIN32
 )
 set_target_properties(lilcraft PROPERTIES C_STANDARD 11)
 target_include_directories(lilcraft PUBLIC lib/fast_obj)
+target_include_directories(lilcraft PUBLIC lib/jsmn)
 target_include_directories(lilcraft PUBLIC lib/sqlite3)
 target_include_directories(lilcraft PUBLIC lib/stb)
 target_link_libraries(lilcraft PUBLIC SDL3::SDL3)
@@ -50,7 +51,7 @@ function(add_shader FILE)
                 OUTPUT ${OUTPUT}
                 COMMAND ${TOOL} ${SOURCE} -o ${OUTPUT}
                 WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-                DEPENDS ${SOURCE}
+                DEPENDS ${SOURCE} res/shaders/mesh.glsl
                 BYPRODUCTS ${OUTPUT}
                 COMMENT ${OUTPUT}
             )
@@ -74,6 +75,8 @@ function(add_shader FILE)
     _add_shader(${SHADERCROSS} ${SPV} ${MSL})
     _add_shader(${SHADERCROSS} ${SPV} ${JSON})
 endfunction()
+add_shader(mesh.frag)
+add_shader(mesh.vert)
 
 file(COPY LICENSE.txt DESTINATION ${BINARY_DIR})
 file(COPY README.md DESTINATION ${BINARY_DIR})

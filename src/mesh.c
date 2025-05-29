@@ -1,6 +1,6 @@
 #include <SDL3/SDL.h>
-#include <stb_ds.h>
 #include <fast_obj.h>
+#include <stb_ds.h>
 
 #include <assert.h>
 #include <stdbool.h>

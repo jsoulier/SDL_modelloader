@@ -9,9 +9,9 @@
 #include "mesh.h"
 #include "util.h"
 
+static SDL_IOStream* iostream;
 static SDL_Window* window;
 static SDL_GPUDevice* device;
-static SDL_IOStream* iostream;
 
 static void log_callback(void* data, int category, SDL_LogPriority priority, const char* string)
 {
