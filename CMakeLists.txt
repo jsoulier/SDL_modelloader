@@ -12,48 +12,38 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_RELEASE ${BINARY_DIR})
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_DEBUG ${BINARY_DIR})
 make_directory(${BINARY_DIR})
 
-set(SDLIMAGE_AVIF OFF)
-set(SDLIMAGE_BMP OFF)
-set(SDLIMAGE_GIF OFF)
-set(SDLIMAGE_JPG OFF)
-set(SDLIMAGE_JXL OFF)
-set(SDLIMAGE_LBM OFF)
-set(SDLIMAGE_PCX OFF)
-set(SDLIMAGE_PNM OFF)
-set(SDLIMAGE_QOI OFF)
-set(SDLIMAGE_SVG OFF)
-set(SDLIMAGE_TGA OFF)
-set(SDLIMAGE_TIF OFF)
-set(SDLIMAGE_WEBP OFF)
-set(SDLIMAGE_XCF OFF)
-set(SDLIMAGE_XPM OFF)
-set(SDLIMAGE_XV OFF)
-set(SDLTTF_PLUTOSVG OFF)
-
 add_subdirectory(lib/SDL)
-add_subdirectory(lib/SDL_image)
 add_subdirectory(lib/SDL_ttf)
-add_subdirectory(lib/sqlite3)
 add_executable(lilcraft WIN32
+    lib/fast_obj/fast_obj.c
+    lib/sqlite3/sqlite3.c
+    lib/stb/stb.c
+    src/data.c
     src/db.c
+    src/e/item.c
     src/e/mob.c
     src/e/player.c
     src/entity.c
     src/main.c
+    src/mesh.c
+    src/util.c
 )
 set_target_properties(lilcraft PROPERTIES C_STANDARD 11)
+target_include_directories(lilcraft PUBLIC lib/fast_obj)
+target_include_directories(lilcraft PUBLIC lib/sqlite3)
+target_include_directories(lilcraft PUBLIC lib/stb)
 target_link_libraries(lilcraft PUBLIC SDL3::SDL3)
-target_link_libraries(lilcraft PUBLIC SDL3_image::SDL3_image)
 target_link_libraries(lilcraft PUBLIC SDL3_ttf::SDL3_ttf)
-target_link_libraries(lilcraft PUBLIC sqlite3)
 
 function(add_shader FILE)
-    set(SHADERCROSS lib/SDL_shadercross/shadercross.exe)
-    set(GLSL ${CMAKE_SOURCE_DIR}/shaders/${FILE})
-    set(SPV ${CMAKE_SOURCE_DIR}/shaders/bin/${FILE}.spv)
-    set(DXIL ${CMAKE_SOURCE_DIR}/shaders/bin/${FILE}.dxil)
-    set(MSL ${CMAKE_SOURCE_DIR}/shaders/bin/${FILE}.msl)
-    set(JSON ${CMAKE_SOURCE_DIR}/shaders/bin/${FILE}.json)
+    if(MSVC)
+        set(SHADERCROSS lib/SDL_shadercross/shadercross.exe)
+    endif()
+    set(GLSL ${CMAKE_SOURCE_DIR}/res/shaders/${FILE})
+    set(SPV ${CMAKE_SOURCE_DIR}/res/shaders/bin/${FILE}.spv)
+    set(DXIL ${CMAKE_SOURCE_DIR}/res/shaders/bin/${FILE}.dxil)
+    set(MSL ${CMAKE_SOURCE_DIR}/res/shaders/bin/${FILE}.msl)
+    set(JSON ${CMAKE_SOURCE_DIR}/res/shaders/bin/${FILE}.json)
     function(_add_shader TOOL SOURCE OUTPUT)
         if(MSVC)
             add_custom_command(

@@ -2,9 +2,6 @@
 #include "mob.h"
 #include "player.h"
 
-static void init_stub(entity_t* entity, void* args) {}
-static void blob_stub(entity_t* entity, db_blob_t* blob) {}
-
 struct
 {
     void (*init)(entity_t* entity, void* args);

@@ -2,15 +2,12 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <stdlib.h>
-
 #include "db.h"
+#include "e/item.h"
 #include "e/mob.h"
 #include "e/player.h"
 #include "entity.h"
 #include "util.h"
-
-static void init_stub(entity_t* entity, void* args) {}
-static void blob_stub(entity_t* entity, db_blob_t* blob) {}
 
 struct
 {
@@ -26,6 +23,12 @@ static const vtable[entity_type_count] =
         .init = e_mob_init,
         .blob = e_mob_blob,
         .size = sizeof(e_player_t),
+    },
+    [entity_type_item] =
+    {
+        .init = e_item_init,
+        .blob = e_item_blob,
+        .size = sizeof(e_item_t),
     },
 };
 
@@ -47,6 +50,7 @@ entity_t* entity_create_args(entity_type_t type, void* args)
     entity->x = 0.0f;
     entity->y = 0.0f;
     entity->z = 0.0f;
+    entity->rotation = 0.0f;
 
     assert(vtable[type].init);
     vtable[type].init(entity, args);
