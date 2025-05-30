@@ -12,13 +12,13 @@
 #include "mesh.h"
 #include "util.h"
 
-bool mesh_load(SDL_GPUDevice* device, SDL_GPUCopyPass* copy_pass, mesh_t* mesh, const char* name)
+bool mesh_load(mesh_t* mesh, SDL_GPUDevice* device, SDL_GPUCopyPass* copy_pass, const char* name)
 {
     /* TODO: fix leaks on error */
 
+    assert(mesh);
     assert(device);
     assert(copy_pass);
-    assert(mesh);
     assert(name);
 
     char obj_path[256] = {0};
@@ -235,10 +235,10 @@ bool mesh_load(SDL_GPUDevice* device, SDL_GPUCopyPass* copy_pass, mesh_t* mesh, 
     return true;
 }
 
-void mesh_free(SDL_GPUDevice* device, mesh_t* mesh)
+void mesh_free(mesh_t* mesh, SDL_GPUDevice* device)
 {
-    assert(device);
     assert(mesh);
+    assert(device);
 
     if (mesh->palette)
     {

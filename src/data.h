@@ -2,7 +2,7 @@
 
 typedef enum tile_type
 {
-    tile_count,
+    tile_type_count,
 }
 tile_type_t;
 
@@ -14,7 +14,7 @@ tile_t;
 
 typedef enum item_type
 {
-    item_count,
+    item_type_count,
 }
 item_type_t;
 

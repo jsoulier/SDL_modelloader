@@ -4,13 +4,13 @@
 vec3 mesh_get_position(uint packed)
 {
     ivec3 direction;
-    direction.x = 1 - 2 * int((packed >> 7)  & 0x1);
+    direction.x = 1 - 2 * int((packed >> 7) & 0x1);
     direction.y = 1 - 2 * int((packed >> 15) & 0x1);
     direction.z = 1 - 2 * int((packed >> 23) & 0x1);
 
     ivec3 magnitude;
-    magnitude.x = int((packed >>  0) & 0x7F);
-    magnitude.y = int((packed >>  8) & 0x7F);
+    magnitude.x = int((packed >> 0) & 0x7F);
+    magnitude.y = int((packed >> 8) & 0x7F);
     magnitude.z = int((packed >> 16) & 0x7F);
 
     return magnitude * direction;

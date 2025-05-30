@@ -7,7 +7,13 @@
 
 typedef enum mesh_type
 {
-    mesh_count,
+    mesh_type_dirt_00,
+    mesh_type_grass_00,
+    mesh_type_player_00,
+    mesh_type_sand_00,
+    mesh_type_tree_00,
+    mesh_type_water_00,
+    mesh_type_count,
 }
 mesh_type_t;
 
@@ -29,5 +35,5 @@ typedef struct mesh
 }
 mesh_t;
 
-bool mesh_load(SDL_GPUDevice* device, SDL_GPUCopyPass* copy_pass, mesh_t* mesh, const char* name);
-void mesh_free(SDL_GPUDevice* device, mesh_t* mesh);
+bool mesh_load(mesh_t* mesh, SDL_GPUDevice* device, SDL_GPUCopyPass* copy_pass, const char* name);
+void mesh_free(mesh_t* mesh, SDL_GPUDevice* device);
