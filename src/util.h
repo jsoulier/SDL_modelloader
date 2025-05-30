@@ -3,6 +3,7 @@
 #include <SDL3/SDL.h>
 
 #include <stdbool.h>
+#include <stdint.h>
 
 #ifndef NDEBUG
 static const bool is_debugging = true;
@@ -16,3 +17,6 @@ static const bool is_debugging = false;
 
 SDL_GPUShader* load_shader(SDL_GPUDevice* device, const char* name);
 SDL_GPUTexture* load_texture(SDL_GPUDevice* device, SDL_GPUCopyPass* copy_pass, const char* path);
+
+void push_debug_group(SDL_GPUDevice* device, SDL_GPUCommandBuffer* command_buffer, const char* name);
+void pop_debug_group(SDL_GPUDevice* device, SDL_GPUCommandBuffer* command_buffer);

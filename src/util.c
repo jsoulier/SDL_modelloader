@@ -4,6 +4,7 @@
 
 #include <assert.h>
 #include <stddef.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -68,10 +69,10 @@ SDL_GPUShader* load_shader(SDL_GPUDevice* device, const char* name)
     }
 
     jsmn_parser json_parser;
-    jsmntok_t json_tokens[8];
+    jsmntok_t json_tokens[9];
 
     jsmn_init(&json_parser);
-    if (jsmn_parse(&json_parser, shader_json_data, shader_json_size, json_tokens, 8) <= 0)
+    if (jsmn_parse(&json_parser, shader_json_data, shader_json_size, json_tokens, 9) <= 0)
     {
         error("Failed to parse json: %s", shader_json_path);
         return NULL;
@@ -79,7 +80,7 @@ SDL_GPUShader* load_shader(SDL_GPUDevice* device, const char* name)
 
     SDL_GPUShaderCreateInfo info = {0};
 
-    for (int i = 0; i < 8; i += 2)
+    for (int i = 1; i < 9; i += 2)
     {
         if (json_tokens[i].type != JSMN_STRING)
         {
@@ -89,25 +90,29 @@ SDL_GPUShader* load_shader(SDL_GPUDevice* device, const char* name)
 
         char* key_string = shader_json_data + json_tokens[i + 0].start;
         char* value_string = shader_json_data + json_tokens[i + 1].start;
-        int key_size = json_tokens[i].size;
+        int key_size = json_tokens[i + 0].end - json_tokens[i + 0].start;
 
         uint32_t* value;
 
-        if (!memcmp("num_samplers", key_string, key_size))
+        if (!memcmp("samplers", key_string, key_size))
         {
             value = &info.num_samplers;
         }
-        else if (!memcmp("num_storage_textures", key_string, key_size))
+        else if (!memcmp("storage_textures", key_string, key_size))
         {
             value = &info.num_storage_textures;
         }
-        else if (!memcmp("num_storage_buffers", key_string, key_size))
+        else if (!memcmp("storage_buffers", key_string, key_size))
         {
             value = &info.num_storage_buffers;
         }
-        else if (!memcmp("num_uniform_buffers", key_string, key_size))
+        else if (!memcmp("uniform_buffers", key_string, key_size))
         {
             value = &info.num_uniform_buffers;
+        }
+        else
+        {
+            assert(false);
         }
 
         *value = *value_string - '0';
@@ -131,6 +136,13 @@ SDL_GPUShader* load_shader(SDL_GPUDevice* device, const char* name)
     if (is_debugging)
     {
         info.props = SDL_CreateProperties();
+        if (!info.props)
+        {
+            error("Failed to create properties: %s", SDL_GetError());
+            return NULL;
+        }
+
+        SDL_SetStringProperty(info.props, "SDL.gpu.shader.create.name", name);
     }
 
     SDL_GPUShader* shader = SDL_CreateGPUShader(device, &info);
@@ -140,10 +152,7 @@ SDL_GPUShader* load_shader(SDL_GPUDevice* device, const char* name)
         return NULL;
     }
         
-    if (is_debugging)
-    {
-        SDL_DestroyProperties(info.props);
-    }
+    SDL_DestroyProperties(info.props);
 
     SDL_free(shader_data);
     SDL_free(shader_json_data);
@@ -201,6 +210,11 @@ SDL_GPUTexture* load_texture(SDL_GPUDevice* device, SDL_GPUCopyPass* copy_pass, 
         SDL_GPUTextureCreateInfo info = {0};
 
         info.props = SDL_CreateProperties();
+        if (!info.props)
+        {
+            error("Failed to create properties: %s", SDL_GetError());
+            return NULL;
+        }
 
         info.usage = SDL_GPU_TEXTUREUSAGE_SAMPLER;
         info.type = SDL_GPU_TEXTURETYPE_2D;
@@ -246,4 +260,41 @@ SDL_GPUTexture* load_texture(SDL_GPUDevice* device, SDL_GPUCopyPass* copy_pass, 
     }
 
     return texture;
+}
+
+void push_debug_group(SDL_GPUDevice* device, SDL_GPUCommandBuffer* command_buffer, const char* name)
+{
+    assert(device);
+    assert(command_buffer);
+    assert(name);
+
+    if (!is_debugging)
+    {
+        return;
+    }
+
+    if (SDL_GetGPUShaderFormats(device) & SDL_GPU_SHADERFORMAT_DXIL)
+    {
+        return;
+    }
+
+    SDL_PushGPUDebugGroup(command_buffer, name);
+}
+
+void pop_debug_group(SDL_GPUDevice* device, SDL_GPUCommandBuffer* command_buffer)
+{
+    assert(device);
+    assert(command_buffer);
+
+    if (!is_debugging)
+    {
+        return;
+    }
+
+    if (SDL_GetGPUShaderFormats(device) & SDL_GPU_SHADERFORMAT_DXIL)
+    {
+        return;
+    }
+
+    SDL_PopGPUDebugGroup(command_buffer);
 }

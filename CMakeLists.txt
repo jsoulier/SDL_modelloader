@@ -14,10 +14,12 @@ make_directory(${BINARY_DIR})
 
 add_subdirectory(lib/SDL)
 add_subdirectory(lib/SDL_ttf)
+add_subdirectory(lib/cglm)
 add_executable(lilcraft WIN32
     lib/fast_obj/fast_obj.c
     lib/sqlite3/sqlite3.c
     lib/stb/stb.c
+    src/buffer.c
     src/data.c
     src/db.c
     src/e/item.c
@@ -35,6 +37,7 @@ target_include_directories(lilcraft PUBLIC lib/sqlite3)
 target_include_directories(lilcraft PUBLIC lib/stb)
 target_link_libraries(lilcraft PUBLIC SDL3::SDL3)
 target_link_libraries(lilcraft PUBLIC SDL3_ttf::SDL3_ttf)
+target_link_libraries(lilcraft PUBLIC cglm)
 
 function(add_shader FILE)
     if(MSVC)
