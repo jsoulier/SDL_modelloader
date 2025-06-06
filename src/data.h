@@ -1,5 +1,7 @@
 #pragma once
 
+#include <stdint.h>
+
 typedef enum mesh_type
 {
     mesh_type_player_00,

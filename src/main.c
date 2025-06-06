@@ -11,6 +11,8 @@
 #include "db.h"
 #include "dbg.h"
 #include "entity.h"
+#include "gpu.h"
+#include "mlib.h"
 
 static SDL_Window* window;
 static SDL_GPUDevice* device;

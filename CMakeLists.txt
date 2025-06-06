@@ -28,8 +28,9 @@ add_executable(lilcraft WIN32
     src/db.c
     src/dbg.c
     src/entity.c
-    src/main.c
     src/gpu.c
+    src/main.c
+    src/mlib.c
 )
 
 set_target_properties(lilcraft PROPERTIES C_STANDARD 11)
