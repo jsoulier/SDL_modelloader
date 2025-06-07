@@ -3,7 +3,7 @@
 #include <stddef.h>
 
 #include "data.h"
-#include "dbg.h"
+#include "util.h"
 
 const char* get_mesh_path(mesh_type_t type)
 {
@@ -22,8 +22,9 @@ const char* get_mesh_path(mesh_type_t type)
     case mesh_type_water_00:
         return "water_00";
     default:
-        assert(false);
+        assert_debug(false);
     }
+
     return NULL;
 }
 
@@ -31,9 +32,18 @@ const char* get_shader_path(shader_type_t type)
 {
     switch (type)
     {
+    case shader_type_composite_frag:
+        return "composite.frag";
+    case shader_type_mesh_frag:
+        return "mesh.frag";
+    case shader_type_mesh_vert:
+        return "mesh.vert";
+    case shader_type_screen_vert:
+        return "screen.vert";
     default:
-        assert(false);
+        assert_debug(false);
     }
+
     return NULL;
 }
 
@@ -41,29 +51,12 @@ const char* get_compute_pipeline_path(compute_pipeline_type_t type)
 {
     switch (type)
     {
+    case compute_pipeline_type_readback:
+        return "readback.comp";
     default:
-        assert(false);
+        assert_debug(false);
     }
-    return NULL;
-}
 
-const char* get_texture_path(texture_type_t type)
-{
-    switch (type)
-    {
-    default:
-        assert(false);
-    }
-    return NULL;
-}
-
-const char* get_font_path(font_type_t type)
-{
-    switch (type)
-    {
-    default:
-        assert(false);
-    }
     return NULL;
 }
 
@@ -97,32 +90,32 @@ static const tiles[tile_type_count] =
 
 void tile_init(tile_t* tile, tile_type_t type)
 {
-    assert(tile);
-    assert(type >= 0);
-    assert(type < tile_type_count);
+    assert_debug(tile);
+    assert_debug(type >= 0);
+    assert_debug(type < tile_type_count);
 
     tile->type = type;
 }
 
 void item_init(item_t* item, item_type_t type)
 {
-    assert(item);
-    assert(type >= 0);
-    assert(type < item_type_count);
+    assert_debug(item);
+    assert_debug(type >= 0);
+    assert_debug(type < item_type_count);
 
     item->type = type;
 }
 
 mesh_type_t tile_get_mesh_type(const tile_t* tile)
 {
-    assert(tile);
+    assert_debug(tile);
 
     return tiles[tile->type].mesh_type;
 }
 
 mesh_type_t item_get_mesh_type(const item_t* item)
 {
-    assert(item);
+    assert_debug(item);
 
     return mesh_type_count;
 }

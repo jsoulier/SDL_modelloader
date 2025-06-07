@@ -2,19 +2,18 @@
 
 #include <SDL3/SDL.h>
 
-#include <assert.h>
-#undef assert
-
 #ifndef NDEBUG
 #define is_debugging 1
-#define assert SDL_assert
 #define log_release SDL_Log
 #define log_debug SDL_Log
+#define assert_release SDL_assert_always
+#define assert_debug SDL_assert_always
 #else
 #define is_debugging 0
-#define assert
 #define log_release SDL_Log
 #define log_debug
+#define assert_release SDL_assert_always
+#define assert_debug
 #endif
 
 void log_init();

@@ -2,6 +2,17 @@
 
 #include <stdbool.h>
 
+typedef struct aabb
+{
+    struct
+    {
+        float x;
+        float z;
+    }
+    min, max;
+}
+aabb_t;
+
 typedef struct transform
 {
     struct

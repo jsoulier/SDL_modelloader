@@ -26,11 +26,12 @@ add_executable(lilcraft WIN32
 
     src/data.c
     src/db.c
-    src/dbg.c
     src/entity.c
-    src/gpu.c
+    src/gfx.c
+    src/level.c
     src/main.c
-    src/mlib.c
+    src/math_ex.c
+    src/util.c
 )
 
 set_target_properties(lilcraft PROPERTIES C_STANDARD 11)
@@ -69,7 +70,6 @@ function(add_shader FILE)
                 COMMAND ${PROGRAM} ${SOURCE} -o ${OUTPUT}
                 WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
                 DEPENDS ${SOURCE} ${DEPENDS}
-                BYPRODUCTS ${OUTPUT}
                 COMMENT ${OUTPUT}
             )
         endif()
@@ -82,7 +82,6 @@ function(add_shader FILE)
             COMMAND ${CMAKE_COMMAND} -E copy ${OUTPUT} ${BINARY}
             WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
             DEPENDS ${OUTPUT}
-            BYPRODUCTS ${BINARY}
             COMMENT ${BINARY}
         )
 
@@ -98,10 +97,10 @@ function(add_shader FILE)
 endfunction()
 
 add_shader(composite.frag)
-add_shader(fullscreen.vert)
 add_shader(mesh.frag res/shaders/mesh.glsl)
 add_shader(mesh.vert res/shaders/mesh.glsl)
 add_shader(readback.comp)
+add_shader(screen.vert)
 
 function(add_model NAME)
     file(COPY res/models/${NAME}.mtl DESTINATION ${BINARY_DIR})

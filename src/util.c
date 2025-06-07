@@ -2,7 +2,7 @@
 
 #include <stddef.h>
 
-#include "dbg.h"
+#include "util.h"
 
 static void log_callback(void* data, int category, SDL_LogPriority priority, const char* string)
 {

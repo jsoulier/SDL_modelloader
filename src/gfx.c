@@ -11,15 +11,15 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "dbg.h"
-#include "gpu.h"
+#include "gfx.h"
+#include "util.h"
 
 SDL_GPUShader* load_shader(SDL_GPUDevice* device, const char* name)
 {
     /* TODO: fix leaks on error */
 
-    assert(device);
-    assert(name);
+    assert_debug(device);
+    assert_debug(name);
 
     SDL_GPUShaderFormat format = SDL_GetGPUShaderFormats(device);
     const char* entrypoint;
@@ -45,7 +45,7 @@ SDL_GPUShader* load_shader(SDL_GPUDevice* device, const char* name)
     }
     else
     {
-        assert(false);
+        assert_release(false);
     }
 
     char shader_path[256] = {0};
@@ -115,7 +115,7 @@ SDL_GPUShader* load_shader(SDL_GPUDevice* device, const char* name)
         }
         else
         {
-            assert(false);
+            assert_release(false);
         }
 
         *value = *value_string - '0';
@@ -167,8 +167,8 @@ SDL_GPUComputePipeline* load_compute_pipeline(SDL_GPUDevice* device, const char*
 {
     /* TODO: fix leaks on error */
 
-    assert(device);
-    assert(name);
+    assert_debug(device);
+    assert_debug(name);
 
     SDL_GPUShaderFormat format = SDL_GetGPUShaderFormats(device);
     const char* entrypoint;
@@ -194,7 +194,7 @@ SDL_GPUComputePipeline* load_compute_pipeline(SDL_GPUDevice* device, const char*
     }
     else
     {
-        assert(false);
+        assert_release(false);
     }
 
     char shader_path[256] = {0};
@@ -284,7 +284,7 @@ SDL_GPUComputePipeline* load_compute_pipeline(SDL_GPUDevice* device, const char*
         }
         else
         {
-            assert(false);
+            assert_release(false);
         }
 
         *value = *value_string - '0';
@@ -327,9 +327,9 @@ SDL_GPUTexture* load_texture(SDL_GPUDevice* device, SDL_GPUCopyPass* copy_pass, 
 {
     /* TODO: fix leaks on error */
 
-    assert(device);
-    assert(copy_pass);
-    assert(path);
+    assert_debug(device);
+    assert_debug(copy_pass);
+    assert_debug(path);
 
     int channels;
     int width;
@@ -372,13 +372,6 @@ SDL_GPUTexture* load_texture(SDL_GPUDevice* device, SDL_GPUCopyPass* copy_pass, 
     {
         SDL_GPUTextureCreateInfo info = {0};
 
-        info.props = SDL_CreateProperties();
-        if (!info.props)
-        {
-            log_release("Failed to create properties: %s", SDL_GetError());
-            return NULL;
-        }
-
         info.usage = SDL_GPU_TEXTUREUSAGE_SAMPLER;
         info.type = SDL_GPU_TEXTURETYPE_2D;
         info.format = SDL_GPU_TEXTUREFORMAT_R8G8B8A8_UNORM;
@@ -389,13 +382,15 @@ SDL_GPUTexture* load_texture(SDL_GPUDevice* device, SDL_GPUCopyPass* copy_pass, 
 
         info.num_levels = 1;
 
-        if (SDL_GetGPUShaderFormats(device) & SDL_GPU_SHADERFORMAT_DXIL)
-        {
-            SDL_SetFloatProperty(info.props, "SDL.gpu.texture.create.d3d12.clear.depth", 1.0f);
-        }
-
         if (is_debugging)
         {
+            info.props = SDL_CreateProperties();
+            if (!info.props)
+            {
+                log_release("Failed to create properties: %s", SDL_GetError());
+                return NULL;
+            }
+
             SDL_SetStringProperty(info.props, "SDL.gpu.texture.create.name", path);
         }
 
@@ -422,13 +417,15 @@ SDL_GPUTexture* load_texture(SDL_GPUDevice* device, SDL_GPUCopyPass* copy_pass, 
         SDL_UploadToGPUTexture(copy_pass, &info, &region, false);
     }
 
+    SDL_ReleaseGPUTransferBuffer(device, transfer_buffer);
+
     return texture;
 }
 
 void buffer_init(buffer_t* buffer, SDL_GPUBufferUsageFlags buffer_usage, uint32_t stride, const char* name)
 {
-    assert(buffer);
-    assert(stride);
+    assert_debug(buffer);
+    assert_debug(stride);
 
     buffer->name = name;
 
@@ -447,10 +444,10 @@ void buffer_init(buffer_t* buffer, SDL_GPUBufferUsageFlags buffer_usage, uint32_
 
 void buffer_free(buffer_t* buffer, SDL_GPUDevice* device)
 {
-    assert(buffer);
-    assert(device);
+    assert_debug(buffer);
+    assert_debug(device);
 
-    assert(!buffer->data);
+    assert_debug(!buffer->data);
 
     if (buffer->transfer_buffer)
     {
@@ -467,9 +464,9 @@ void buffer_free(buffer_t* buffer, SDL_GPUDevice* device)
 
 void buffer_append(buffer_t* buffer, SDL_GPUDevice* device, const void* data)
 {
-    assert(buffer);
-    assert(device);
-    assert(data);
+    assert_debug(buffer);
+    assert_debug(device);
+    assert_debug(data);
 
     if (!buffer->data && buffer->transfer_buffer)
     {
@@ -554,9 +551,9 @@ void buffer_append(buffer_t* buffer, SDL_GPUDevice* device, const void* data)
 
 void buffer_upload(buffer_t* buffer, SDL_GPUDevice* device, SDL_GPUCopyPass* copy_pass)
 {
-    assert(buffer);
-    assert(device);
-    assert(copy_pass);
+    assert_debug(buffer);
+    assert_debug(device);
+    assert_debug(copy_pass);
 
     if (buffer->data)
     {
@@ -618,10 +615,10 @@ bool mesh_load(mesh_t* mesh, SDL_GPUDevice* device, SDL_GPUCopyPass* copy_pass, 
 {
     /* TODO: fix leaks on error */
 
-    assert(mesh);
-    assert(device);
-    assert(copy_pass);
-    assert(name);
+    assert_debug(mesh);
+    assert_debug(device);
+    assert_debug(copy_pass);
+    assert_debug(name);
 
     SDL_PropertiesID properties = 0;
     if (is_debugging)
@@ -743,9 +740,9 @@ bool mesh_load(mesh_t* mesh, SDL_GPUDevice* device, SDL_GPUCopyPass* copy_pass, 
         int normal_y = obj_mesh->normals[normal_index * 3 + 1];
         int normal_z = obj_mesh->normals[normal_index * 3 + 2];
 
-        assert(position_x >= -16 && position_x <= 16);
-        assert(position_y >= -16 && position_y <= 16);
-        assert(position_z >= -16 && position_z <= 16);
+        assert_debug(position_x >= -16 && position_x <= 16);
+        assert_debug(position_y >= -16 && position_y <= 16);
+        assert_debug(position_z >= -16 && position_z <= 16);
 
         vertex.packed |= (abs(position_x) & 0x7F) << 0;
         vertex.packed |= (position_x < 0) << 7;
@@ -781,7 +778,7 @@ bool mesh_load(mesh_t* mesh, SDL_GPUDevice* device, SDL_GPUCopyPass* copy_pass, 
         }
         else
         {
-            assert(false);
+            assert_debug(false);
         }
         vertex.packed |= (normal & 0x7) << 24;
 
@@ -857,8 +854,8 @@ bool mesh_load(mesh_t* mesh, SDL_GPUDevice* device, SDL_GPUCopyPass* copy_pass, 
 
 void mesh_free(mesh_t* mesh, SDL_GPUDevice* device)
 {
-    assert(mesh);
-    assert(device);
+    assert_debug(mesh);
+    assert_debug(device);
 
     if (mesh->palette)
     {

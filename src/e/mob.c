@@ -21,6 +21,11 @@ void e_mob_init(entity_t* entity, void* args)
 
 }
 
+void e_mob_tick(entity_t* entity, float dt)
+{
+
+}
+
 void e_mob_blob(entity_t* entity, blob_t* blob)
 {
 

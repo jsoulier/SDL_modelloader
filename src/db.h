@@ -3,18 +3,20 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#define DB_NULL_UUID (-1)
+#define db_null_uuid (-1)
 
 typedef struct blob blob_t;
 typedef struct entity entity_t;
 typedef struct item item_t;
 typedef struct tile tile_t;
+typedef struct transform transform_t;
 
 bool blob_ptr(blob_t* blob, void* data, uint32_t size);
 bool blob_float(blob_t* blob, float* data);
 bool blob_int32_t(blob_t* blob, int32_t* data);
 bool blob_uint32_t(blob_t* blob, uint32_t* data);
 bool blob_item_t(blob_t* blob, item_t* data);
+bool blob_transform_t(blob_t* blob, transform_t* data);
 
 typedef struct
 {

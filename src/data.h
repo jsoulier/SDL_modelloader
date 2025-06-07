@@ -18,33 +18,26 @@ mesh_type_t;
 
 typedef enum shader_type
 {
+    shader_type_composite_frag,
+    shader_type_mesh_frag,
+    shader_type_mesh_vert,
+    shader_type_screen_vert,
+
     shader_type_count,
 }
 shader_type_t;
 
 typedef enum compute_pipeline_type
 {
+    compute_pipeline_type_readback,
+
     compute_pipeline_type_count,
 }
 compute_pipeline_type_t;
 
-typedef enum texture_type
-{
-    texture_type_count,
-}
-texture_type_t;
-
-typedef enum font_type
-{
-    font_type_count,
-}
-font_type_t;
-
 const char* get_mesh_path(mesh_type_t type);
 const char* get_shader_path(shader_type_t type);
 const char* get_compute_pipeline_path(compute_pipeline_type_t type);
-const char* get_texture_path(texture_type_t type);
-const char* get_font_path(font_type_t type);
 
 typedef enum tile_type
 {

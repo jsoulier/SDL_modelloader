@@ -2,8 +2,8 @@
 #include <math.h>
 #include <stdbool.h>
 
-#include "dbg.h"
-#include "mlib.h"
+#include "math_ex.h"
+#include "util.h"
 
 static const float pi = 3.1415927f;
 static const float epsilon = FLT_EPSILON;
@@ -234,7 +234,7 @@ static void mat4_inverse(float matrix[4][4], const float z[4][4])
 
 void camera_init(camera_t* camera, camera_mode_t mode)
 {
-    assert(camera);
+    assert_debug(camera);
 
     camera->mode = mode;
 
@@ -261,7 +261,7 @@ void camera_init(camera_t* camera, camera_mode_t mode)
 
 void camera_update(camera_t* camera, float x, float z, float dt, bool frustum)
 {
-    assert(camera);
+    assert_debug(camera);
 
     float width = fmaxf(camera->width, 1.0f);
     float height = fmaxf(camera->height, 1.0f);
@@ -307,7 +307,7 @@ void camera_update(camera_t* camera, float x, float z, float dt, bool frustum)
     }
     else
     {
-        assert(false);
+        assert_debug(false);
     }
 
     mat4_multiply(camera->matrix, b, a);
@@ -324,11 +324,11 @@ void camera_update(camera_t* camera, float x, float z, float dt, bool frustum)
 
 void camera_get_vector(const camera_t* camera, float* x, float* y, float* z)
 {
-    assert(camera);
+    assert_debug(camera);
 
-    assert(x);
-    assert(y);
-    assert(z);
+    assert_debug(x);
+    assert_debug(y);
+    assert_debug(z);
 
     *x = cosf(camera->yaw) * cosf(camera->pitch);
     *y = sinf(camera->pitch);

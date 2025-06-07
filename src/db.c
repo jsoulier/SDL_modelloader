@@ -8,8 +8,9 @@
 
 #include "data.h"
 #include "db.h"
-#include "dbg.h"
 #include "entity.h"
+#include "math_ex.h"
+#include "util.h"
 
 typedef struct blob
 {
@@ -28,7 +29,7 @@ blob_t;
 
 static void blob_init(blob_t* blob, bool is_writer)
 {
-    assert(blob);
+    assert_debug(blob);
 
     blob->reader.size = 0;
     blob->writer.size = 0;
@@ -39,7 +40,7 @@ static void blob_init(blob_t* blob, bool is_writer)
 
 static void blob_free(blob_t* blob)
 {
-    assert(blob);
+    assert_debug(blob);
 
     if (blob->writer.data)
     {
@@ -50,9 +51,9 @@ static void blob_free(blob_t* blob)
 
 bool blob_ptr(blob_t* blob, void* data, uint32_t size)
 {
-    assert(blob);
-    assert(data);
-    assert(size);
+    assert_debug(blob);
+    assert_debug(data);
+    assert_debug(size);
 
     if (blob->failed)
     {
@@ -117,6 +118,11 @@ bool blob_item_t(blob_t* blob, item_t* data)
     return blob_ptr(blob, data, sizeof(*data));
 }
 
+bool blob_transform_t(blob_t* blob, transform_t* data)
+{
+    return blob_ptr(blob, data, sizeof(*data));
+}
+
 static sqlite3* handle;
 
 static sqlite3_stmt* set_header;
@@ -136,7 +142,7 @@ static bool is_open;
 
 bool db_init(const char* path)
 {
-    assert(path);
+    assert_debug(path);
 
     if (sqlite3_open(path, &handle) != SQLITE_OK)
     {
@@ -213,7 +219,7 @@ void db_quit()
 
 void db_set_header(db_header_t* header)
 {
-    assert(header);
+    assert_debug(header);
 
     sqlite3_bind_int(set_header, 1, 0);
     sqlite3_bind_int(set_header, 2, header->new_db);
@@ -228,7 +234,7 @@ void db_set_header(db_header_t* header)
 
 void db_get_header(db_header_t* header)
 {
-    assert(header);
+    assert_debug(header);
 
     sqlite3_bind_int(get_header, 1, 0);
     if (sqlite3_step(get_header) == SQLITE_ROW)
@@ -243,7 +249,7 @@ void db_get_header(db_header_t* header)
 
 void db_insert_entity(entity_t* entity, int y)
 {
-    assert(entity);
+    assert_debug(entity);
 
     if (!is_open)
     {
@@ -253,7 +259,7 @@ void db_insert_entity(entity_t* entity, int y)
 
 void db_insert_tile(tile_t* tile, int x, int y, int z)
 {
-    assert(tile);
+    assert_debug(tile);
 
     if (!is_open)
     {
@@ -263,7 +269,7 @@ void db_insert_tile(tile_t* tile, int x, int y, int z)
 
 void db_select_entity(void (*callback)(entity_t* entity, int x))
 {
-    assert(callback);
+    assert_debug(callback);
 
     if (!is_open)
     {
@@ -273,7 +279,7 @@ void db_select_entity(void (*callback)(entity_t* entity, int x))
 
 void db_select_tile(void (*callback)(tile_t* tile, int x, int y, int z))
 {
-    assert(callback);
+    assert_debug(callback);
 
     if (!is_open)
     {
@@ -283,7 +289,7 @@ void db_select_tile(void (*callback)(tile_t* tile, int x, int y, int z))
 
 void db_delete_entity(entity_t* entity)
 {
-    assert(entity);
+    assert_debug(entity);
 
     if (!is_open)
     {
