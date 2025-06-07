@@ -107,9 +107,9 @@ add_shader(readback.comp)
 add_shader(screen.vert)
 
 function(add_model NAME)
-    file(COPY res/models/${NAME}.mtl DESTINATION ${BINARY_DIR})
-    file(COPY res/models/${NAME}.obj DESTINATION ${BINARY_DIR})
-    file(COPY res/models/${NAME}.png DESTINATION ${BINARY_DIR})
+    configure_file(res/models/${NAME}.mtl ${BINARY_DIR} COPYONLY)
+    configure_file(res/models/${NAME}.obj ${BINARY_DIR} COPYONLY)
+    configure_file(res/models/${NAME}.png ${BINARY_DIR} COPYONLY)
 endfunction()
 
 add_model(dirt_00)

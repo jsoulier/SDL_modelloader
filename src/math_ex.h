@@ -69,3 +69,8 @@ camera_t;
 void camera_init(camera_t* camera, camera_mode_t mode);
 void camera_update(camera_t* camera, float x, float z, float dt, bool frustum);
 void camera_get_vector(const camera_t* camera, float* x, float* y, float* z);
+void camera_set_pitch(camera_t* camera, float pitch);
+void camera_set_distance(camera_t* camera, float distance);
+void camera_set_yaw(camera_t* camera, float yaw);
+void camera_set_width(camera_t* camera, float width);
+void camera_set_height(camera_t* camera, float height);

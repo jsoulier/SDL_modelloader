@@ -19,6 +19,10 @@ static int level;
 
 bool level_init(bool new_level)
 {
+    /* TODO: */
+
+    level_insert_entity(entity_create(entity_type_player, NULL), level_null_y);
+
     return true;
 }
 
@@ -57,7 +61,25 @@ void level_tick(float dt, const aabb_t* aabb)
     levels[level].entities = entities;
 }
 
-void level_each_entity(void (*callback)(const entity_t* entity, void* data), const aabb_t* aabb, void *data)
+void level_insert_entity(entity_t* entity, int y)
+{
+    /* TODO: db */
+
+    assert_debug(entity);
+
+    if (y == level_null_y)
+    {
+        y = level;
+    }
+
+    assert_debug(y >= 0);
+    assert_debug(y < level_depth);
+
+    entity->next = levels[y].entities;
+    levels[y].entities = entity;
+}
+
+void level_select_entity(void (*callback)(const entity_t* entity, void* data), const aabb_t* aabb, void *data)
 {
     assert_debug(callback);
     assert_debug(aabb);
@@ -77,7 +99,7 @@ void level_each_entity(void (*callback)(const entity_t* entity, void* data), con
     }
 }
 
-void level_each_tile(void (*callback)(const tile_t* tile, int x, int z, void* data), const aabb_t* aabb, void *data)
+void level_select_tile(void (*callback)(const tile_t* tile, int x, int z, void* data), const aabb_t* aabb, void *data)
 {
     assert_debug(callback);
     assert_debug(aabb);

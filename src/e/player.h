@@ -11,3 +11,4 @@ e_player_t;
 
 void e_player_init(entity_t* entity, void* args);
 void e_player_blob(entity_t* entity, blob_t* blob);
+void e_player_move(const entity_t* entity, float* dx, float* dz);

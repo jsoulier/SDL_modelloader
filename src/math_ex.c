@@ -345,7 +345,42 @@ void camera_get_vector(const camera_t* camera, float* x, float* y, float* z)
     assert_debug(y);
     assert_debug(z);
 
-    *x = cosf(camera->yaw) * cosf(camera->pitch);
+    *x = cosf(camera->yaw - to_radians(90.0f)) * cosf(camera->pitch);
     *y = sinf(camera->pitch);
-    *z = sinf(camera->yaw) * cosf(camera->pitch);
+    *z = sinf(camera->yaw - to_radians(90.0f)) * cosf(camera->pitch);
+}
+
+void camera_set_pitch(camera_t* camera, float pitch)
+{
+    assert_debug(camera);
+
+    camera->pitch = to_radians(pitch);
+}
+
+void camera_set_distance(camera_t* camera, float distance)
+{
+    assert_debug(camera);
+
+    camera->distance = distance;
+}
+
+void camera_set_yaw(camera_t* camera, float yaw)
+{
+    assert_debug(camera);
+
+    camera->yaw = to_radians(yaw);
+}
+
+void camera_set_width(camera_t* camera, float width)
+{
+    assert_debug(camera);
+
+    camera->width = width;
+}
+
+void camera_set_height(camera_t* camera, float height)
+{
+    assert_debug(camera);
+
+    camera->height = height;
 }

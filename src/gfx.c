@@ -782,7 +782,7 @@ bool mesh_load(mesh_t* mesh, SDL_GPUDevice* device, SDL_GPUCopyPass* copy_pass, 
         }
         vertex.packed |= (normal & 0x7) << 24;
 
-        const int index = stbds_hmget(vertex_to_index, vertex);
+        int index = stbds_hmget(vertex_to_index, vertex);
         if (index == -1)
         {
             stbds_hmput(vertex_to_index, vertex, mesh->num_vertices);
@@ -831,7 +831,7 @@ bool mesh_load(mesh_t* mesh, SDL_GPUDevice* device, SDL_GPUCopyPass* copy_pass, 
 
     location.transfer_buffer = index_buffer;
     region.buffer = mesh->index_buffer;
-    region.size = mesh->num_vertices * sizeof(mesh_index_t);
+    region.size = mesh->num_indices * sizeof(mesh_index_t);
     SDL_UploadToGPUBuffer(copy_pass, &location, &region, false);
 
     SDL_ReleaseGPUTransferBuffer(device, vertex_buffer);
