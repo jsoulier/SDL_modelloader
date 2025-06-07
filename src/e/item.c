@@ -27,3 +27,10 @@ void e_item_blob(entity_t* entity, blob_t* blob)
 
     blob_item_t(blob, &item->item);
 }
+
+mesh_type_t e_item_get_mesh_type(const entity_t* entity)
+{
+    e_item_t* item = (e_item_t*) entity;
+
+    return item_get_mesh_type(&item->item);
+}

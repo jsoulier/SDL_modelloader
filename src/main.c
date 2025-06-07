@@ -15,7 +15,7 @@
 #include "math_ex.h"
 #include "util.h"
 
-#define render_target_pov_ratio 0.5f
+#define resolution 0.5f
 
 typedef enum graphics_pipeline_type
 {
@@ -47,6 +47,14 @@ typedef enum sampler_type
 }
 sampler_type_t;
 
+typedef enum camera_type
+{
+    camera_type_pov,
+
+    camera_type_count,
+}
+camera_type_t;
+
 static SDL_Window* window;
 static SDL_GPUDevice* device;
 
@@ -61,6 +69,7 @@ static SDL_GPUSampler* samplers[sampler_type_count];
 
 static mesh_t meshes[mesh_type_count];
 static buffer_t instances[mesh_type_count];
+static camera_t cameras[camera_type_count];
 
 static int swapchain_width; 
 static int swapchain_height; 
@@ -297,8 +306,8 @@ static bool init_render_targets(int width, int height)
         }
     }
 
-    pov_width = width * render_target_pov_ratio;
-    pov_height = height * render_target_pov_ratio;
+    pov_width = width * resolution;
+    pov_height = height * resolution;
 
     SDL_GPUTextureCreateInfo info = {0};
     if (SDL_GetGPUShaderFormats(device) & SDL_GPU_SHADERFORMAT_DXIL)
@@ -431,7 +440,56 @@ static bool init_meshes()
     return true;
 }
 
-static void draw_pov(SDL_GPUCommandBuffer* command_buffer, SDL_GPUTexture* swapchain_texture)
+static void upload_instance_entity_callback(const entity_t* entity, void* data)
+{
+    mesh_type_t mesh_type = entity_get_mesh_type(entity);
+    transform_t transform = entity_get_transform(entity);
+
+    assert_debug(mesh_type >= 0);
+    assert_debug(mesh_type < mesh_type_count);
+
+    buffer_append(&instances[mesh_type], device, &transform);
+}
+
+static void upload_instance_tile_callback(const tile_t* tile, int x, int z, void* data)
+{
+    mesh_type_t mesh_type = tile_get_mesh_type(tile);
+    transform_t transform = tile_get_transform(tile, x, z);
+
+    assert_debug(mesh_type >= 0);
+    assert_debug(mesh_type < mesh_type_count);
+   
+    buffer_append(&instances[mesh_type], device, &transform);
+}
+
+static void upload_instances(SDL_GPUCommandBuffer* command_buffer)
+{
+    /* TODO: camera */
+    aabb_t aabb;
+    aabb.min.x = -100.0f;
+    aabb.min.z = -100.0f;
+    aabb.max.x = 100.0f;
+    aabb.max.z = 100.0f;
+
+    level_each_entity(upload_instance_entity_callback, &aabb, NULL);
+    level_each_tile(upload_instance_tile_callback, &aabb, NULL);
+
+    SDL_GPUCopyPass* copy_pass = SDL_BeginGPUCopyPass(command_buffer);
+    if (!copy_pass)
+    {
+        log_release("Failed to acquire copy pass: %s", SDL_GetError());
+        return;
+    }
+
+    for (mesh_type_t i = 0; i < mesh_type_count; i++)
+    {
+        buffer_upload(&instances[i], device, copy_pass);
+    }
+
+    SDL_EndGPUCopyPass(copy_pass);
+}
+
+static void draw_pov(SDL_GPUCommandBuffer* command_buffer)
 {
     SDL_GPUColorTargetInfo color_info[3] = {0};
     SDL_GPUDepthStencilTargetInfo depth_info = {0};
@@ -466,8 +524,7 @@ static void draw_pov(SDL_GPUCommandBuffer* command_buffer, SDL_GPUTexture* swapc
     }
 
     SDL_BindGPUGraphicsPipeline(render_pass, graphics_pipelines[graphics_pipeline_type_pov]);
-
-    /* TODO: matrix */
+    SDL_PushGPUVertexUniformData(command_buffer, 0, cameras[camera_type_pov].matrix, 64);
 
     for (mesh_type_t i = 0; i < mesh_type_count; i++)
     {
@@ -476,7 +533,22 @@ static void draw_pov(SDL_GPUCommandBuffer* command_buffer, SDL_GPUTexture* swapc
             continue;
         }
 
-        /* TODO: mesh/instance */
+        SDL_GPUBufferBinding vertex_buffers[2] = {0};
+        vertex_buffers[0].buffer = meshes[i].vertex_buffer;
+        vertex_buffers[1].buffer = instances[i].buffer;
+
+        SDL_GPUBufferBinding index_buffer = {0};
+        index_buffer.buffer = meshes[i].index_buffer;
+
+        SDL_GPUTextureSamplerBinding palette = {0};
+        palette.sampler = samplers[sampler_type_nearest];
+        palette.texture = meshes[i].palette;
+
+        SDL_BindGPUVertexBuffers(render_pass, 0, vertex_buffers, 2);
+        SDL_BindGPUIndexBuffer(render_pass, &index_buffer, SDL_GPU_INDEXELEMENTSIZE_16BIT);
+        SDL_BindGPUFragmentSamplers(render_pass, 0, &palette, 1);
+
+        SDL_DrawGPUIndexedPrimitives(render_pass, meshes[i].num_indices, instances[i].size, 0, 0, 0);
     }
 
     SDL_EndGPURenderPass(render_pass);
@@ -524,8 +596,12 @@ static void draw_frame()
         return;
     }
 
-    push_debug_group(device, command_buffer, "pov");
-    draw_pov(command_buffer, swapchain_texture);
+    push_debug_group(device, command_buffer, "upload_instances");
+    upload_instances(command_buffer);
+    pop_debug_group(device, command_buffer);
+
+    push_debug_group(device, command_buffer, "draw_pov");
+    draw_pov(command_buffer);
     pop_debug_group(device, command_buffer);
 
     SDL_SubmitGPUCommandBuffer(command_buffer);

@@ -2,6 +2,8 @@
 
 #include <stdint.h>
 
+#include "math_ex.h"
+
 typedef enum mesh_type
 {
     mesh_type_player_00,
@@ -73,3 +75,6 @@ void tile_init(tile_t* tile, tile_type_t type);
 void item_init(item_t* item, item_type_t type);
 mesh_type_t tile_get_mesh_type(const tile_t* tile);
 mesh_type_t item_get_mesh_type(const item_t* item);
+transform_t tile_get_transform(const tile_t* tile, int x, int z);
+aabb_t tile_get_aabb(const tile_t* tile, int x, int z);
+

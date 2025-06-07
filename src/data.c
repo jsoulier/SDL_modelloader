@@ -119,3 +119,31 @@ mesh_type_t item_get_mesh_type(const item_t* item)
 
     return mesh_type_count;
 }
+
+transform_t tile_get_transform(const tile_t* tile, int x, int z)
+{
+    assert_debug(tile);
+
+    transform_t transform;
+
+    transform.position.x = x * 16.0f;
+    transform.position.y = 0.0f;
+    transform.position.z = z * 16.0f;
+    transform.rotation = 0.0f;
+
+    return transform;
+}
+
+aabb_t tile_get_aabb(const tile_t* tile, int x, int z)
+{
+    assert_debug(tile);
+
+    aabb_t aabb;
+
+    aabb.min.x = x * 16.0f - 8.0f;
+    aabb.min.z = z * 16.0f - 8.0f;
+    aabb.max.x = x * 16.0f + 8.0f;
+    aabb.max.z = z * 16.0f + 8.0f;
+
+    return aabb;
+}

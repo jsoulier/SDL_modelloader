@@ -439,7 +439,7 @@ void buffer_init(buffer_t* buffer, SDL_GPUBufferUsageFlags buffer_usage, uint32_
     buffer->size = 0;
     buffer->capacity = 0;
 
-    buffer->resize = false;
+    buffer->resize = true;
 }
 
 void buffer_free(buffer_t* buffer, SDL_GPUDevice* device)

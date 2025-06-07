@@ -17,6 +17,8 @@ struct
     void (*tick)(entity_t* entity, float dt);
     void (*blob)(entity_t* entity, blob_t* blob);
 
+    mesh_type_t (*get_mesh_type)(const entity_t* entity);
+
     uint32_t size;
 }
 static const vtable[entity_type_count] =
@@ -26,6 +28,7 @@ static const vtable[entity_type_count] =
         .init = e_mob_init,
         .tick = e_mob_tick,
         .blob = e_mob_blob,
+        .get_mesh_type = e_mob_get_mesh_type,
         .size = sizeof(e_player_t),
     },
     [entity_type_item] =
@@ -33,6 +36,7 @@ static const vtable[entity_type_count] =
         .init = e_item_init,
         .tick = e_item_tick,
         .blob = e_item_blob,
+        .get_mesh_type = e_item_get_mesh_type,
         .size = sizeof(e_item_t),
     },
 };
@@ -56,10 +60,11 @@ entity_t* entity_create(entity_type_t type, void* args)
     entity->uuid = db_null_uuid;
     entity->type = type;
 
-    entity->transform.position.x = 0.0f;
-    entity->transform.position.y = 0.0f;
-    entity->transform.position.z = 0.0f;
-    entity->transform.rotation = 0.0f;
+    entity->x = 0.0f;
+    entity->y = 0.0f;
+    entity->z = 0.0f;
+    entity->rotation = 0.0f;
+    entity->radius = 16.0f;
 
     entity->alive = true;
 
@@ -87,7 +92,45 @@ void entity_blob(entity_t* entity, blob_t* blob)
     assert_debug(entity);
     assert_debug(blob);
 
-    blob_transform_t(blob, &entity->transform);
+    blob_float(blob, &entity->x);
+    blob_float(blob, &entity->y);
+    blob_float(blob, &entity->z);
+    blob_float(blob, &entity->rotation);
 
     vtable[entity->type].blob(entity, blob);
+}
+
+mesh_type_t entity_get_mesh_type(const entity_t* entity)
+{
+    assert_debug(entity);
+
+    return vtable[entity->type].get_mesh_type(entity);
+}
+
+transform_t entity_get_transform(const entity_t* entity)
+{
+    assert_debug(entity);
+
+    transform_t transform;
+
+    transform.position.x = entity->x;
+    transform.position.y = entity->y;
+    transform.position.z = entity->z;
+    transform.rotation = entity->rotation;
+
+    return transform;
+}
+
+aabb_t entity_get_aabb(const entity_t* entity)
+{
+    assert_debug(entity);
+
+    aabb_t aabb;
+
+    aabb.min.x = entity->x - entity->radius;
+    aabb.min.z = entity->z - entity->radius;
+    aabb.max.x = entity->x + entity->radius;
+    aabb.max.z = entity->z + entity->radius;
+
+    return aabb;
 }

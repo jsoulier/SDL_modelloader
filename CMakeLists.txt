@@ -44,6 +44,10 @@ target_include_directories(lilcraft PRIVATE lib/stb)
 target_link_libraries(lilcraft PRIVATE SDL3::SDL3)
 target_link_libraries(lilcraft PRIVATE SDL3_ttf::SDL3_ttf)
 
+if(MSVC)
+    target_compile_definitions(lilcraft PRIVATE _USE_MATH_DEFINES)
+endif()
+
 if(UNIX)
     target_link_libraries(lilcraft PRIVATE m)
 endif()

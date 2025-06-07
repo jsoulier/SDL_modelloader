@@ -5,17 +5,32 @@
 #include "math_ex.h"
 #include "util.h"
 
-static const float pi = 3.1415927f;
-static const float epsilon = FLT_EPSILON;
+bool aabb_test(const aabb_t* aabb1, const aabb_t* aabb2)
+{
+    assert_debug(aabb1);
+    assert_debug(aabb2);
+
+    if (aabb1->max.x < aabb2->min.x || aabb1->min.x > aabb2->max.x)
+    {
+        return false;
+    }
+
+    if (aabb1->max.z < aabb2->min.z || aabb1->min.z > aabb2->max.z)
+    {
+        return false;
+    }
+
+    return true;
+}
 
 static float to_radians(float degrees)
 {
-    return degrees * (pi / 180.0f);
+    return degrees * (M_PI / 180.0f);
 }
 
 static float to_degrees(float radians)
 {
-    return radians * (180.0f / pi);
+    return radians * (180.0f / M_PI);
 }
 
 static float lerp(float a, float b, float t)
@@ -217,7 +232,7 @@ static void mat4_inverse(float matrix[4][4], const float z[4][4])
         c * matrix[2][0] +
         d * matrix[3][0];
 
-    if (determinant < epsilon)
+    if (determinant < FLT_EPSILON)
     {
         log_release("Determinant approaching zero");
         return;

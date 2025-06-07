@@ -26,6 +26,8 @@ typedef struct transform
 }
 transform_t;
 
+bool aabb_test(const aabb_t* aabb1, const aabb_t* aabb2);
+
 typedef enum camera_mode
 {
     camera_mode_perspective,
