@@ -51,58 +51,11 @@ SDL_AppResult SDL_AppIterate(void* appstate)
     currTime = databaseTime + t2;
 
     mppLevelUpdate(dt, currTime);
-
-    uint64_t sprite1 = mppRendererCreateSprite(Red, Green, Blue, Magenta, 0, 0, 16);
-    uint64_t sprite2 = mppRendererCreateSprite(Red, Green, Blue, Magenta, 16, 0, 16);
-
     mppRendererClear();
-    mppRendererDraw(sprite1, 32, 32);
-    mppRendererDraw(sprite2, 64, 32);
-    mppRendererDraw("testing", 128, 128, Red, 12);
-    mppRendererDraw("testing", 64, 128, Green, 12);
-    mppRendererDraw("testing", 192, 128, Blue, 12);
-    mppRendererDraw("testing", 128, 64, Red, 6);
-    mppRendererDraw("testing", 64, 64, Green, 6);
-    mppRendererDraw("testing", 192, 64, Blue, 6);
-    mppRendererDraw("testing", 128, 32, Red, 6);
-    mppRendererDraw("testing", 64, 32, Green, 6);
-    mppRendererDraw("testing", 192, 32, Blue, 6);
-    mppRendererDraw("testing", 192, 32, Blue, 6);
-    mppRendererDraw("testing", 192, 32, Blue, 6);
-    mppRendererDraw("testing", 192, 32, Blue, 6);
-    mppRendererDraw("testing", 192, 32, Blue, 6);
-    mppRendererDraw("testing", 192, 32, Blue, 6);
-    mppRendererDraw("testing", 192, 32, Blue, 6);
-    mppRendererDraw("testing", 192, 32, Blue, 6);
-    mppRendererDraw("testing", 192, 32, Blue, 6);
-    mppRendererDraw("testing", 192, 32, Blue, 6);
-    mppRendererDraw("testing", 192, 32, Blue, 6);
-    mppRendererDraw("testing", 192, 32, Blue, 6);
-    mppRendererDraw("testing", 192, 32, Blue, 6);
-    mppRendererDraw("testing", 192, 32, Blue, 6);
-    mppRendererDraw("testing", 192, 32, Blue, 6);
-    mppRendererDraw("testing", 192, 32, Blue, 6);
-    mppRendererDraw("testing", 192, 32, Blue, 6);
-    mppRendererDraw("testing", 192, 32, Blue, 6);
-    mppRendererDraw("testing", 192, 32, Blue, 6);
-    mppRendererDraw("testing", 192, 32, Blue, 6);
-    mppRendererDraw("testing", 192, 32, Blue, 6);
-    mppRendererDraw("testing", 192, 32, Blue, 6);
-    mppRendererDraw("testing", 192, 32, Blue, 6);
-    mppRendererDraw("testing", 192, 32, Blue, 6);
-    mppRendererDraw("testing", 192, 32, Blue, 6);
-    mppRendererDraw("testing", 192, 32, Blue, 6);
-    mppRendererDraw("testing", 192, 32, Blue, 6);
-    mppRendererDraw("testing", 192, 32, Blue, 6);
-    mppRendererDraw("testing", 192, 32, Blue, 6);
-    mppRendererDraw("testing", 192, 32, Blue, 6);
-    mppRendererDraw("testing", 192, 32, Blue, 6);
-
     mppLevelRender();
-
     mppRendererPresent();
 
-    /* TODO: cooldown */
+    /* TODO: commit cooldown */
 
     mppLevelCommit();
     mppDatabaseSetTime(currTime);

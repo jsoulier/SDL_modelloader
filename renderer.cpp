@@ -261,12 +261,19 @@ void mppRendererPresent()
     SDL_RenderPresent(renderer);
 }
 
-void mppRendererSetCamera(uint64_t sprite, float x, float y)
+void mppRendererSetCamera(float x, float y)
 {
-    uint64_t size = getSpriteSize(sprite);
-
     cameraX = x - Width / 2;
     cameraY = y - Height / 2;
+}
+
+void mppRendererGetCameraBounds(float& x1, float& y1, float& x2, float& y2)
+{
+    x1 = cameraX - Width / 2;
+    y1 = cameraY - Height / 2;
+
+    x2 = cameraX + Width / 2;
+    y2 = cameraY + Height / 2;
 }
 
 static SDL_Surface* createSpriteSurface(uint64_t sprite)
@@ -390,8 +397,6 @@ static SDL_Texture* createFontTexture(const char* text, float x, float y, int in
 
 void mppRendererDraw(const char* text, float x, float y, int color, int size)
 {
-    /* TODO: refactor */
-
     size *= FontResolution;
 
     auto font = fonts.find(size);

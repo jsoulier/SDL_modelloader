@@ -39,10 +39,12 @@ add_executable(minicraft++ WIN32
     e_mob.cpp
     e_player.cpp
     entity.cpp
+    item.cpp
     level.cpp
     main.cpp
     renderer.cpp
     sqlite3.c
+    tile.cpp
 )
 
 set_target_properties(minicraft++ PROPERTIES CXX_STANDARD 23)

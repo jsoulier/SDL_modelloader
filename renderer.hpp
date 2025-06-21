@@ -55,6 +55,7 @@ bool mppRendererInit();
 void mppRendererQuit();
 void mppRendererClear();
 void mppRendererPresent();
-void mppRendererSetCamera(uint64_t sprite, float x, float y);
+void mppRendererSetCamera(float x, float y);
+void mppRendererGetCameraBounds(float& x1, float& y1, float& x2, float& y2);
 void mppRendererDraw(uint64_t sprite, float x, float y);
 void mppRendererDraw(const char* text, float x, float y, int color, int size);

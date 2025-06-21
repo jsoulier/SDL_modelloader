@@ -7,17 +7,12 @@
 
 static constexpr float Speed = 0.05f;
 
-/* TODO: add some virtual functions to fetch the sprites */
-static constexpr uint64_t Sprite = mppRendererCreateSprite(Red, Green, Blue, Yellow, 0, 0, 16);
-
 void MppEntityMob::render()
 {
-    mppRendererDraw(Sprite, x, y);
     mppRendererDraw("here", x + 0.5f, y + 0.5f, Black, 6);
     mppRendererDraw("here", x, y, Gray, 6);
     mppRendererDraw("here", x - 0.5f, y - 0.5f, White, 6);
-
-    mppRendererSetCamera(Sprite, x, y);
+    mppRendererSetCamera(x, y);
 }
 
 void MppEntityMob::update(uint64_t dt, uint64_t time)
